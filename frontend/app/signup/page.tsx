@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { AlertCircle, Loader2, ArrowRight, Lock, Mail, User, Shield, Building, MapPin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from "@/lib/api";
+import { indianStatesAndDistricts } from "@/lib/indian_states";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -25,19 +26,23 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [departments, setDepartments] = useState<any[]>([]);
-  const [regions, setRegions] = useState<any[]>([]);
+  // const [regions, setRegions] = useState<any[]>([]); // Deprecated
   const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [selectedRegion, setSelectedRegion] = useState("");
+  // const [selectedRegion, setSelectedRegion] = useState(""); // Deprecated
+  
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const [deptRes, regionRes] = await Promise.all([
+        const [deptRes] = await Promise.all([
           api.get("/metadata/departments"),
-          api.get("/metadata/regions")
+          // api.get("/metadata/regions")
         ]);
         setDepartments(deptRes.data);
-        setRegions(regionRes.data);
+        // setRegions(regionRes.data);
       } catch (err) {
         console.error("Failed to fetch metadata", err);
       }
@@ -46,6 +51,15 @@ export default function SignupPage() {
         fetchMetadata();
     }
   }, [role]);
+
+  useEffect(() => {
+    if (selectedState && indianStatesAndDistricts[selectedState as keyof typeof indianStatesAndDistricts]) {
+      setAvailableDistricts(indianStatesAndDistricts[selectedState as keyof typeof indianStatesAndDistricts]);
+      setSelectedDistrict("");
+    } else {
+      setAvailableDistricts([]);
+    }
+  }, [selectedState]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +76,10 @@ export default function SignupPage() {
 
       if (role === "FieldOfficer") {
         payload.department_id = parseInt(selectedDepartment);
-        payload.region_id = parseInt(selectedRegion);
+        payload.state = selectedState;
+        payload.district = selectedDistrict;
+        // Legacy support if needed, map district to region_code or similar
+        payload.region_code = selectedDistrict; 
       }
 
       await api.post("/auth/signup", payload);
@@ -188,17 +205,36 @@ export default function SignupPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="region" className="text-slate-200">Region</Label>
+                    <Label htmlFor="state" className="text-slate-200">State</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
-                      <Select onValueChange={setSelectedRegion} value={selectedRegion}>
+                      <Select onValueChange={setSelectedState} value={selectedState}>
                         <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
-                          <SelectValue placeholder="Select Region" />
+                          <SelectValue placeholder="Select State" />
                         </SelectTrigger>
                         <SelectContent>
-                          {regions.map((region) => (
-                            <SelectItem key={region.id} value={region.id.toString()}>
-                              {region.name} ({region.code})
+                          {Object.keys(indianStatesAndDistricts).map((state) => (
+                            <SelectItem key={state} value={state}>
+                              {state}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="district" className="text-slate-200">District</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
+                      <Select onValueChange={setSelectedDistrict} value={selectedDistrict} disabled={!selectedState}>
+                        <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
+                          <SelectValue placeholder="Select District" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableDistricts.map((district) => (
+                            <SelectItem key={district} value={district}>
+                              {district}
                             </SelectItem>
                           ))}
                         </SelectContent>

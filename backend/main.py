@@ -10,6 +10,7 @@ app = FastAPI(title="CivicPulse API", description="AI-driven grievance redressal
 @app.on_event("startup")
 async def startup_event():
     try:
+        print(f"Using Database URL: {database.SQLALCHEMY_DATABASE_URL}")
         print("Creating database tables...")
         models.Base.metadata.create_all(bind=database.engine)
         print("✅ Database tables ready")

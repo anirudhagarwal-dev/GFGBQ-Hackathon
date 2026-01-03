@@ -59,6 +59,8 @@ class User(Base):
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     region_id = Column(Integer, ForeignKey("regions.id"), nullable=True) # Changed from region_code
     region_code = Column(String, nullable=True) # Kept for backward compatibility
+    state = Column(String, nullable=True)
+    district = Column(String, nullable=True)
 
     grievances = relationship("Grievance", back_populates="citizen", foreign_keys="[Grievance.citizen_id]")
     assigned_grievances = relationship("Grievance", back_populates="assignee", foreign_keys="[Grievance.assignee_id]")
@@ -98,6 +100,8 @@ class Grievance(Base):
 
     location = Column(String, nullable=True)
     region_code = Column(String, nullable=True) 
+    state = Column(String, nullable=True)
+    district = Column(String, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

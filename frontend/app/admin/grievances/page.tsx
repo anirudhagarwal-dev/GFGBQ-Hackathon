@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api";
-import { Loader2, Filter, CheckCircle, UserPlus } from "lucide-react";
-
+import { Loader2, Filter, CheckCircle, UserPlus, MapPin, ArrowLeft, User } from "lucide-react";
+import { indianStatesAndDistricts } from "@/lib/indian_states";
 
 interface Grievance {
   id: number;
@@ -21,6 +21,8 @@ interface Grievance {
   department_id?: number;
   region_id?: number;
   region_code?: string;
+  state?: string;
+  district?: string;
   assignee_id?: number;
 }
 
@@ -30,27 +32,65 @@ interface Officer {
   email: string;
   department_id: number;
   region_code: string;
+  state?: string;
+  district?: string;
 }
 
+type ViewState = "states" | "districts" | "dashboard";
+
 export default function AdminGrievances() {
+  const [view, setView] = useState<ViewState>("states");
+  const [selectedState, setSelectedState] = useState<string>("");
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+  
   const [grievances, setGrievances] = useState<Grievance[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [officers, setOfficers] = useState<Officer[]>([]);
+  const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("All");
 
   useEffect(() => {
-    fetchGrievances();
-  }, [filterStatus]);
+    if (view === "dashboard" && selectedDistrict) {
+      fetchDashboardData();
+    }
+  }, [view, selectedDistrict, filterStatus]);
 
-  const fetchGrievances = async () => {
+  const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const url = filterStatus !== "All" ? `/grievance/?status=${filterStatus}` : "/grievance/";
-      const response = await api.get(url);
-      setGrievances(response.data);
+      // Fetch Grievances
+      let gUrl = `/grievance/?state=${encodeURIComponent(selectedState)}&district=${encodeURIComponent(selectedDistrict)}`;
+      if (filterStatus !== "All") gUrl += `&status=${filterStatus}`;
+      const gResponse = await api.get(gUrl);
+      setGrievances(gResponse.data);
+
+      // Fetch Officers
+      const oResponse = await api.get(`/admin/officers?state=${encodeURIComponent(selectedState)}&district=${encodeURIComponent(selectedDistrict)}`);
+      setOfficers(oResponse.data);
     } catch (error) {
-      console.error("Failed to fetch grievances", error);
+      console.error("Failed to fetch dashboard data", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStateClick = (state: string) => {
+    setSelectedState(state);
+    setView("districts");
+  };
+
+  const handleDistrictClick = (district: string) => {
+    setSelectedDistrict(district);
+    setView("dashboard");
+  };
+
+  const handleBack = () => {
+    if (view === "dashboard") {
+      setView("districts");
+      setGrievances([]);
+      setOfficers([]);
+    } else if (view === "districts") {
+      setView("states");
+      setSelectedState("");
     }
   };
 
@@ -77,7 +117,7 @@ export default function AdminGrievances() {
   const handleVerify = async (id: number) => {
       try {
           await api.patch(`/admin/grievance/${id}/verify`);
-          fetchGrievances();
+          fetchDashboardData();
       } catch (error) {
           console.error("Verification failed", error);
           alert("Failed to verify grievance");
@@ -87,78 +127,181 @@ export default function AdminGrievances() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Grievance Management</h1>
-            <p className="text-gray-500">Manage and track citizen complaints</p>
+            <p className="text-gray-500">
+              {view === "states" && "Select a State to view districts"}
+              {view === "districts" && `Select a District in ${selectedState}`}
+              {view === "dashboard" && `Dashboard for ${selectedDistrict}, ${selectedState}`}
+            </p>
           </div>
-          <div className="flex gap-4">
-             <a href="/admin/dashboard" className="text-sm text-blue-600 hover:underline self-center mr-4">Back to Dashboard</a>
-            <Select onValueChange={setFilterStatus} defaultValue="All">
-              <SelectTrigger className="w-[180px]">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Filter Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="New">New</SelectItem>
-                <SelectItem value="Assigned">Assigned</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
-                <SelectItem value="Resolved">Resolved</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex gap-4 items-center">
+             {view !== "states" && (
+                 <Button variant="outline" onClick={handleBack} className="mr-4">
+                     <ArrowLeft className="w-4 h-4 mr-2" />
+                     Back
+                 </Button>
+             )}
+             <a href="/admin/dashboard" className="text-sm text-blue-600 hover:underline">Back to Dashboard</a>
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center p-12">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {grievances.length === 0 ? (
-              <p className="text-center text-gray-500">No grievances found.</p>
-            ) : (
-              grievances.map((g) => (
-                <Card key={g.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-lg">#{g.id} {g.title}</span>
-                        <Badge variant="outline">{g.category}</Badge>
-                      </div>
-                      <p className="text-sm text-gray-500">
-                        Created on {new Date(g.created_at).toLocaleDateString()}
-                      </p>
+        {/* View: States Grid */}
+        {view === "states" && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {Object.keys(indianStatesAndDistricts).map((state) => (
+                    <Card 
+                        key={state} 
+                        className="hover:shadow-lg transition-all cursor-pointer hover:border-blue-500 group"
+                        onClick={() => handleStateClick(state)}
+                    >
+                        <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-2">
+                            <MapPin className="w-8 h-8 text-blue-500 group-hover:scale-110 transition-transform" />
+                            <span className="font-semibold text-lg">{state}</span>
+                            <span className="text-xs text-gray-500">{indianStatesAndDistricts[state].length} Districts</span>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        )}
+
+        {/* View: Districts Grid */}
+        {view === "districts" && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {indianStatesAndDistricts[selectedState]?.map((district) => (
+                    <Card 
+                        key={district} 
+                        className="hover:shadow-lg transition-all cursor-pointer hover:border-blue-500 group"
+                        onClick={() => handleDistrictClick(district)}
+                    >
+                        <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-2">
+                            <MapPin className="w-8 h-8 text-green-500 group-hover:scale-110 transition-transform" />
+                            <span className="font-semibold text-lg">{district}</span>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        )}
+
+        {/* View: Dashboard (Grievances + Officers) */}
+        {view === "dashboard" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Grievances (2/3 width) */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold flex items-center gap-2">
+                            <Filter className="w-5 h-5" />
+                            Grievances
+                        </h2>
+                        <Select onValueChange={setFilterStatus} defaultValue="All">
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filter Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Statuses</SelectItem>
+                                <SelectItem value="New">New</SelectItem>
+                                <SelectItem value="Assigned">Assigned</SelectItem>
+                                <SelectItem value="In Progress">In Progress</SelectItem>
+                                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
+                                <SelectItem value="Resolved">Resolved</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
+
+                    {loading ? (
+                        <div className="flex justify-center p-12">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : grievances.length === 0 ? (
+                        <Card>
+                            <CardContent className="p-8 text-center text-gray-500">
+                                No grievances found in {selectedDistrict}.
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="space-y-4">
+                            {grievances.map((g) => (
+                                <Card key={g.id} className="hover:shadow-md transition-shadow">
+                                    <CardContent className="p-6">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-lg">#{g.id} {g.title}</span>
+                                                    <Badge variant="outline">{g.category}</Badge>
+                                                </div>
+                                                <p className="text-sm text-gray-500">
+                                                    Created on {new Date(g.created_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <Badge className={getStatusColor(g.status)}>{g.status}</Badge>
+                                        </div>
+                                        
+                                        <div className="flex items-center justify-between mt-4">
+                                            <div className={`text-sm ${getPriorityColor(g.priority)}`}>
+                                                {g.priority} Priority
+                                            </div>
+                                            
+                                            <div className="flex gap-2">
+                                                {g.status === "Pending Verification" && (
+                                                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleVerify(g.id)}>
+                                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                                        Verify
+                                                    </Button>
+                                                )}
+
+                                                {(g.status === "New" || g.status === "Assigned") && (
+                                                    <AssignDialog grievance={g} onAssign={fetchDashboardData} />
+                                                )}
+
+                                                <Button variant="outline" asChild size="sm">
+                                                    <a href={`/grievance/${g.id}`}>View Details</a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Column: Field Officers (1/3 width) */}
+                <div className="space-y-6">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                        <User className="w-5 h-5" />
+                        Field Officers
+                    </h2>
                     
-                    <div className="flex items-center gap-4">
-                      <div className={`text-sm ${getPriorityColor(g.priority)}`}>
-                        {g.priority} Priority
-                      </div>
-                      <Badge className={getStatusColor(g.status)}>{g.status}</Badge>
-                      
-                      {g.status === "Pending Verification" && (
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleVerify(g.id)}>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Verify
-                          </Button>
-                      )}
-
-                      {(g.status === "New" || g.status === "Assigned") && (
-                          <AssignDialog grievance={g} onAssign={fetchGrievances} />
-                      )}
-
-                      <Button variant="outline" asChild size="sm">
-                        <a href={`/grievance/${g.id}`}>View Details</a>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+                    {officers.length === 0 ? (
+                        <Card>
+                            <CardContent className="p-8 text-center text-gray-500">
+                                No officers registered in {selectedDistrict}.
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="space-y-4">
+                            {officers.map((officer) => (
+                                <Card key={officer.id}>
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                                            {officer.full_name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">{officer.full_name}</p>
+                                            <p className="text-xs text-gray-500">{officer.email}</p>
+                                            <Badge variant="secondary" className="mt-1 text-xs">
+                                                {officer.district ? `${officer.district}, ${officer.state}` : officer.region_code}
+                                            </Badge>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
         )}
       </div>
     </div>
@@ -183,7 +326,15 @@ function AssignDialog({ grievance, onAssign }: { grievance: Grievance; onAssign:
             // Fetch officers matching department and region
             let url = `/admin/officers?`;
             if (grievance.department_id) url += `department_id=${grievance.department_id}&`;
-            if (grievance.region_id) url += `region_id=${grievance.region_id}`; // Assuming region_id is available
+            
+            // Prefer state/district if available
+            if (grievance.state && grievance.district) {
+                url += `state=${encodeURIComponent(grievance.state)}&district=${encodeURIComponent(grievance.district)}`;
+            } else if (grievance.region_code) {
+                url += `region_code=${encodeURIComponent(grievance.region_code)}`;
+            } else if (grievance.region_id) {
+                url += `region_id=${grievance.region_id}`;
+            }
             
             const response = await api.get(url);
             setOfficers(response.data);
@@ -234,7 +385,7 @@ function AssignDialog({ grievance, onAssign }: { grievance: Grievance; onAssign:
                             ) : (
                                 officers.map((officer) => (
                                     <SelectItem key={officer.id} value={officer.id.toString()}>
-                                        {officer.full_name} ({officer.region_code || "No Region"})
+                                        {officer.full_name} ({officer.district ? `${officer.district}, ${officer.state}` : officer.region_code || "No Region"})
                                     </SelectItem>
                                 ))
                             )}

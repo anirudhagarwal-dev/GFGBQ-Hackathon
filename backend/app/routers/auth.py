@@ -28,7 +28,9 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
             role=role_value,
             department_id=user.department_id,
             region_id=user.region_id,
-            region_code=user.region_code
+            region_code=user.region_code,
+            state=user.state,
+            district=user.district
         )
         db.add(new_user)
         db.commit()
@@ -56,3 +58,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         data={"sub": user.email, "role": user.role}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer", "role": user.role}
+
+@router.get("/me", response_model=schemas.User)
+def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
+    return current_user
