@@ -64,7 +64,7 @@ export function GoogleMapsHeatmap({
   return (
     <Card className="w-full h-[350px] overflow-hidden">
       <CardContent className="p-0 h-full">
-        <LoadScript googleMapsApiKey={apiKey}>
+        <LoadScript googleMapsApiKey={apiKey} libraries={libraries}>
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={center}

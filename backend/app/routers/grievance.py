@@ -18,6 +18,8 @@ def create_grievance(
     description: str = Form(...),
     location: Optional[str] = Form(None),
     region_code: Optional[str] = Form(None),
+    state: Optional[str] = Form(None),
+    district: Optional[str] = Form(None),
     privacy_consent: bool = Form(False),
     image: UploadFile = File(None),
     db: Session = Depends(database.get_db),
@@ -58,6 +60,8 @@ def create_grievance(
         ai_summary=ai_result["summary"],
         location=location,
         region_code=region_code,
+        state=state,
+        district=district,
         privacy_consent=privacy_consent
     )
     
@@ -223,11 +227,20 @@ def read_grievances(
     skip: int = 0, 
     limit: int = 100, 
     status: Optional[str] = None,
+    region_code: Optional[str] = None,
+    state: Optional[str] = None,
+    district: Optional[str] = None,
     db: Session = Depends(database.get_db)
 ):
     query = db.query(models.Grievance)
     if status:
         query = query.filter(models.Grievance.status == status)
+    if region_code:
+        query = query.filter(models.Grievance.region_code == region_code)
+    if state:
+        query = query.filter(models.Grievance.state == state)
+    if district:
+        query = query.filter(models.Grievance.district == district)
     
     grievances = query.offset(skip).limit(limit).all()
     return grievances

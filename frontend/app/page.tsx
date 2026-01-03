@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { indianStatesAndDistricts } from "@/lib/indian_states";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +19,9 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
-  const [regionCode, setRegionCode] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +34,15 @@ export default function Home() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [listeningField, setListeningField] = useState<"title" | "description" | null>(null);
+
+  useEffect(() => {
+    if (selectedState) {
+        setAvailableDistricts(indianStatesAndDistricts[selectedState] || []);
+        setSelectedDistrict(""); 
+    } else {
+        setAvailableDistricts([]);
+    }
+  }, [selectedState]);
 
   useEffect(() => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -109,7 +122,9 @@ export default function Home() {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("location", location);
-      formData.append("region_code", regionCode);
+      formData.append("region_code", selectedDistrict);
+      formData.append("state", selectedState);
+      formData.append("district", selectedDistrict);
       formData.append("privacy_consent", String(consent));
       if (image) {
         formData.append("image", image);
@@ -318,26 +333,43 @@ export default function Home() {
                                             className="min-h-[100px] bg-white/50 focus:bg-white transition-colors"
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="location">Location</Label>
-                                            <Input 
-                                                id="location" 
-                                                placeholder="e.g. Main Street"
-                                                value={location}
-                                                onChange={(e) => setLocation(e.target.value)}
-                                                className="bg-white/50 focus:bg-white transition-colors"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="regionCode">Region Code</Label>
-                                            <Input 
-                                            id="regionCode" 
-                                            placeholder="e.g. REG-001"
-                                            value={regionCode}
-                                            onChange={(e) => setRegionCode(e.target.value)}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="location">Location (Address/Landmark)</Label>
+                                        <Input 
+                                            id="location" 
+                                            placeholder="e.g. Main Street"
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
                                             className="bg-white/50 focus:bg-white transition-colors"
                                         />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>State</Label>
+                                            <Select onValueChange={setSelectedState} value={selectedState}>
+                                                <SelectTrigger className="bg-white/50 focus:bg-white transition-colors">
+                                                    <SelectValue placeholder="Select State" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Object.keys(indianStatesAndDistricts).map((state) => (
+                                                        <SelectItem key={state} value={state}>{state}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>District</Label>
+                                            <Select onValueChange={setSelectedDistrict} value={selectedDistrict} disabled={!selectedState}>
+                                                <SelectTrigger className="bg-white/50 focus:bg-white transition-colors">
+                                                    <SelectValue placeholder="Select District" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {availableDistricts.map((district) => (
+                                                        <SelectItem key={district} value={district}>{district}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <input
@@ -354,7 +386,6 @@ export default function Home() {
                                         >
                                             {t("consentText")}
                                         </label>
-                                    </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="image">Upload Evidence (Optional)</Label>

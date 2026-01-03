@@ -1,0 +1,12 @@
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+.env
+node_modules/
+.DS_Store
+Traeresources*
+t 2025Attempt-3*
+backend/uploads/*.png
+backend/uploads/*.jpg
+backend/uploads/*.jpeg

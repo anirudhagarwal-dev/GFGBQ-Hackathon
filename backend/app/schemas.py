@@ -35,6 +35,8 @@ class UserBase(BaseModel):
     department_id: Optional[int] = None
     region_code: Optional[str] = None
     region_id: Optional[int] = None
+    state: Optional[str] = None
+    district: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -113,6 +115,8 @@ class GrievanceBase(BaseModel):
     description: str
     location: Optional[str] = None
     region_code: Optional[str] = None
+    state: Optional[str] = None
+    district: Optional[str] = None
     image_url: Optional[str] = None
     privacy_consent: bool = False
 

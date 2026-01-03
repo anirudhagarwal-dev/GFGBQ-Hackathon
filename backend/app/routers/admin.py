@@ -36,11 +36,20 @@ def assign_grievance(
     if officer.department_id != db_grievance.department_id:
         raise HTTPException(status_code=400, detail="Officer department does not match grievance department")
     
-    if db_grievance.region_id and officer.region_id and officer.region_id != db_grievance.region_id:
-        raise HTTPException(status_code=400, detail="Officer region does not match grievance region")
-    elif db_grievance.region_code and officer.region_code and officer.region_code != db_grievance.region_code:
-        # Fallback to code if ID not present
-        raise HTTPException(status_code=400, detail="Officer region does not match grievance region")
+    # State and District Check
+    if db_grievance.state and officer.state and db_grievance.state != officer.state:
+        raise HTTPException(status_code=400, detail="Officer state does not match grievance state")
+        
+    if db_grievance.district and officer.district and db_grievance.district != officer.district:
+        raise HTTPException(status_code=400, detail="Officer district does not match grievance district")
+
+    # Legacy Region Check (fallback)
+    if (not db_grievance.state or not officer.state) and (not db_grievance.district or not officer.district):
+        if db_grievance.region_id and officer.region_id and officer.region_id != db_grievance.region_id:
+            raise HTTPException(status_code=400, detail="Officer region does not match grievance region")
+        elif db_grievance.region_code and officer.region_code and officer.region_code != db_grievance.region_code:
+            # Fallback to code if ID not present
+            raise HTTPException(status_code=400, detail="Officer region does not match grievance region")
 
     db_grievance.assignee_id = officer.id
     db_grievance.status = models.GrievanceStatus.ASSIGNED
@@ -75,6 +84,9 @@ def get_dashboard_stats(db: Session = Depends(database.get_db)):
 def get_officers(
     department_id: Optional[int] = None,
     region_id: Optional[int] = None,
+    region_code: Optional[str] = None,
+    state: Optional[str] = None,
+    district: Optional[str] = None,
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
@@ -89,7 +101,18 @@ def get_officers(
     if region_id:
         query = query.filter(models.User.region_id == region_id)
         
+    if region_code:
+        query = query.filter(models.User.region_code == region_code)
+
+    if state:
+        query = query.filter(models.User.state == state)
+
+    if district:
+        query = query.filter(models.User.district == district)
+
     return query.all()
+
+
 
 @router.patch("/grievance/{grievance_id}/verify", response_model=schemas.Grievance)
 def verify_grievance(
