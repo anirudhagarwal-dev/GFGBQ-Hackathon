@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
-import { Loader2, CheckCircle, MapPin, LogOut, HardHat, Calendar } from "lucide-react";
+import { Loader2, CheckCircle, MapPin, LogOut, HardHat, Calendar, Clock, LayoutDashboard, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface Grievance {
@@ -58,6 +58,15 @@ export default function FieldOfficerDashboard() {
     }
   };
 
+  const handleStartProgress = async (grievanceId: number) => {
+    try {
+      await api.patch(`/grievance/${grievanceId}/status`, { status: "In Progress" });
+      fetchAssignedGrievances();
+    } catch (error) {
+      console.error("Failed to start progress", error);
+    }
+  };
+
   const handleResolve = async () => {
     if (!selectedGrievance) return;
     setResolving(true);
@@ -74,7 +83,7 @@ export default function FieldOfficerDashboard() {
       setDialogOpen(false);
       fetchAssignedGrievances(); // Refresh list
     } catch (error) {
-      console.error("Failed to resolve grievance", error);
+      console.error("Failed to submit resolution", error);
     } finally {
       setResolving(false);
       setResolutionImage(null);
@@ -198,6 +207,14 @@ export default function FieldOfficerDashboard() {
                                      <div className="flex items-center gap-2 text-green-700 bg-green-50 px-3 py-1.5 rounded-full text-sm font-medium">
                                          <CheckCircle className="h-4 w-4" /> Resolved
                                      </div>
+                                 ) : g.status === "Pending Verification" ? (
+                                     <div className="flex items-center gap-2 text-orange-700 bg-orange-50 px-3 py-1.5 rounded-full text-sm font-medium">
+                                         <Clock className="h-4 w-4" /> Pending Verification
+                                     </div>
+                                 ) : g.status === "Assigned" || g.status === "New" ? (
+                                    <Button onClick={() => handleStartProgress(g.id)} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
+                                        Start Work
+                                    </Button>
                                  ) : (
                                     <Dialog open={dialogOpen && selectedGrievance?.id === g.id} onOpenChange={(open) => {
                                         setDialogOpen(open);
@@ -205,7 +222,7 @@ export default function FieldOfficerDashboard() {
                                     }}>
                                         <DialogTrigger asChild>
                                             <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
-                                                Resolve Issue
+                                                Submit Resolution
                                             </Button>
                                         </DialogTrigger>
                                         <DialogContent>
@@ -224,7 +241,7 @@ export default function FieldOfficerDashboard() {
                                             <DialogFooter>
                                                 <Button onClick={handleResolve} disabled={resolving} className="w-full sm:w-auto">
                                                     {resolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                    Mark as Resolved
+                                                    Submit for Verification
                                                 </Button>
                                             </DialogFooter>
                                         </DialogContent>

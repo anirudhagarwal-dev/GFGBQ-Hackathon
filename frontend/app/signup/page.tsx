@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { AlertCircle, Loader2, ArrowRight, Lock, Mail, User, Shield } from "lucide-react";
+import { AlertCircle, Loader2, ArrowRight, Lock, Mail, User, Shield, Building, MapPin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from "@/lib/api";
 
@@ -21,18 +21,48 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [regions, setRegions] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("");
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const [deptRes, regionRes] = await Promise.all([
+          api.get("/metadata/departments"),
+          api.get("/metadata/regions")
+        ]);
+        setDepartments(deptRes.data);
+        setRegions(regionRes.data);
+      } catch (err) {
+        console.error("Failed to fetch metadata", err);
+      }
+    };
+    if (role === 'FieldOfficer') {
+        fetchMetadata();
+    }
+  }, [role]);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      await api.post("/auth/signup", {
+      const payload: any = {
         email,
         password,
         full_name: fullName,
         role
-      });
+      };
+
+      if (role === "FieldOfficer") {
+        payload.department_id = parseInt(selectedDepartment);
+        payload.region_id = parseInt(selectedRegion);
+      }
+
+      await api.post("/auth/signup", payload);
       
       router.push("/login");
     } catch (err: any) {
@@ -129,6 +159,48 @@ export default function SignupPage() {
                   </Select>
                 </div>
               </div>
+
+              {role === "FieldOfficer" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="department" className="text-slate-200">Department</Label>
+                    <div className="relative">
+                      <Building className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
+                      <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
+                        <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
+                          <SelectValue placeholder="Select Department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id.toString()}>
+                              {dept.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="region" className="text-slate-200">Region</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
+                      <Select onValueChange={setSelectedRegion} value={selectedRegion}>
+                        <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
+                          <SelectValue placeholder="Select Region" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {regions.map((region) => (
+                            <SelectItem key={region.id} value={region.id.toString()}>
+                              {region.name} ({region.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {error && (
                 <motion.div

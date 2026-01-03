@@ -1,57 +1,52 @@
+from typing import Dict, Any, Tuple
 import random
-from typing import Tuple, Optional
 
 class AIService:
     @staticmethod
-    def analyze_grievance(title: str, description: str, image_url: Optional[str] = None) -> dict:
+    def classify_grievance(title: str, description: str) -> Dict[str, Any]:
         """
-        Mock AI analysis for grievance.
-        Returns: category, priority, sentiment, summary
+        Mock AI service to classify grievance, detect spam, and calculate severity.
         """
+        # Mock logic
         text = (title + " " + description).lower()
         
-        # Classification Logic
-        category = "General"
-        if any(w in text for w in ["leak", "overflow", "pipeline", "water"]):
-            category = "Water Supply"
-        elif any(w in text for w in ["wire", "fire", "spark", "electric", "pole"]):
-            category = "Electricity"
-        elif any(w in text for w in ["road", "pothole", "asphalt"]):
-            category = "Roads & Transport"
-        elif any(w in text for w in ["garbage", "trash", "waste", "bin"]):
-            category = "Sanitation"
-
-        # Severity/Priority Logic
-        priority = "Low"
-        if any(w in text for w in ["fire", "spark", "danger", "accident", "emergency"]):
-            priority = "Critical"
-        elif any(w in text for w in ["blocked", "broken", "overflow"]):
-            priority = "High"
+        # Categories
+        categories = ["Sanitation", "Roads", "Water Supply", "Electricity", "Law & Order", "Other"]
+        category = "Other"
+        for cat in categories:
+            if cat.lower() in text:
+                category = cat
+                break
         
-        # Image impact (Mock)
-        if image_url:
-            # Assume images imply visual evidence of damage, slightly raising priority if low
-            if priority == "Low":
-                priority = "Medium"
-
-        # Sentiment Logic
-        sentiment = 0.0
-        if any(w in text for w in ["angry", "frustrated", "worst", "useless", "urgent"]):
-            sentiment = -0.8
-        elif any(w in text for w in ["please", "kindly", "help"]):
-            sentiment = 0.2
-        
-        # Summary
-        summary = f"AI Summary: Issue related to {category} with {priority} priority."
-
+        # Severity
+        severity_score = 0.3
+        if "urgent" in text or "danger" in text or "accident" in text:
+            severity_score = 0.9
+        elif "broken" in text or "leak" in text:
+            severity_score = 0.6
+            
+        # Spam detection
+        is_spam = False
+        if "test" in text or len(text) < 5:
+            is_spam = True
+            
         return {
             "category": category,
-            "priority": priority,
-            "sentiment_score": sentiment,
-            "ai_summary": summary
+            "severity_score": severity_score,
+            "is_spam": is_spam,
+            "summary": description[:100] + "..." if len(description) > 100 else description
         }
 
     @staticmethod
-    def check_duplicates(text: str, existing_embeddings: list) -> bool:
-        # Mock deduplication
-        return False
+    def suggest_department(category: str) -> str:
+        """
+        Maps category to department code.
+        """
+        mapping = {
+            "Sanitation": "DEPT-SAN",
+            "Roads": "DEPT-PWD",
+            "Water Supply": "DEPT-WAT",
+            "Electricity": "DEPT-PWR",
+            "Law & Order": "DEPT-POL"
+        }
+        return mapping.get(category, "DEPT-GEN")

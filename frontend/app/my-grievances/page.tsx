@@ -34,6 +34,9 @@ export default function MyGrievances() {
         return;
     }
     fetchMyGrievances();
+
+    const intervalId = setInterval(fetchMyGrievances, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleLogout = () => {

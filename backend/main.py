@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from .app import models, database
-from .app.routers import grievance, admin, auth
+from .app.routers import grievance, admin, auth, metadata
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -14,6 +14,7 @@ app.mount("/uploads", StaticFiles(directory="backend/uploads"), name="uploads")
 origins = [
     "http://localhost:3000",
     "http://localhost:8000",
+    "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
@@ -27,6 +28,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(grievance.router)
 app.include_router(admin.router)
+app.include_router(metadata.router)
 
 @app.get("/")
 def read_root():

@@ -16,11 +16,55 @@ router = APIRouter(
 def create_grievance(
     title: str = Form(...),
     description: str = Form(...),
+    location: Optional[str] = Form(None),
+    region_code: Optional[str] = Form(None),
+    privacy_consent: bool = Form(False),
     image: UploadFile = File(None),
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    image_url = None
+    # AI Classification
+    ai_result = AIService.classify_grievance(title, description)
+    
+    # Priority mapping
+    severity = ai_result["severity_score"]
+    if severity >= 0.8:
+        priority = models.Priority.CRITICAL
+    elif severity >= 0.6:
+        priority = models.Priority.HIGH
+    elif severity >= 0.4:
+        priority = models.Priority.MEDIUM
+    else:
+        priority = models.Priority.LOW
+
+    # Department Suggestion
+    dept_code = AIService.suggest_department(ai_result["category"])
+    department = db.query(models.Department).filter(models.Department.code == dept_code).first()
+    department_id = department.id if department else None
+
+    # Create Grievance
+    db_grievance = models.Grievance(
+        title=title,
+        description=description,
+        citizen_id=current_user.id,
+        department_id=department_id,
+        assignee_id=None,
+        status=models.GrievanceStatus.NEW,
+        priority=priority,
+        category=ai_result["category"],
+        category_ai=ai_result["category"],
+        severity_ai=severity,
+        is_spam=ai_result["is_spam"],
+        ai_summary=ai_result["summary"],
+        location=location,
+        region_code=region_code,
+        privacy_consent=privacy_consent
+    )
+    
+    db.add(db_grievance)
+    db.flush() # To get ID
+
+    # Handle Image
     if image:
         file_extension = image.filename.split(".")[-1]
         filename = f"{uuid.uuid4()}.{file_extension}"
@@ -30,27 +74,63 @@ def create_grievance(
             shutil.copyfileobj(image.file, buffer)
         
         image_url = f"/uploads/{filename}"
+        db_grievance.image_url = image_url # Keep legacy field for now
+        
+        db_media = models.Media(
+            grievance_id=db_grievance.id,
+            url=image_url,
+            uploader_id=current_user.id,
+            type="image"
+        )
+        db.add(db_media)
 
-    ai_result = AIService.analyze_grievance(title, description, image_url)
-    
-    department = db.query(models.Department).filter(models.Department.name == ai_result["category"]).first()
-    department_id = department.id if department else None
-
-    db_grievance = models.Grievance(
-        title=title,
-        description=description,
-        image_url=image_url,
-        citizen_id=current_user.id,
-        department_id=department_id,
-        assignee_id=3,
-        status=models.GrievanceStatus.OPEN,
-        priority=ai_result["priority"],
-        category=ai_result["category"],
-        sentiment_score=ai_result["sentiment_score"],
-        ai_summary=ai_result["ai_summary"]
+    # Create Initial Timeline
+    db_timeline = models.Timeline(
+        grievance_id=db_grievance.id,
+        status=models.GrievanceStatus.NEW,
+        remark="Grievance submitted by citizen"
     )
+    db.add(db_timeline)
+
+    db.commit()
+    db.refresh(db_grievance)
+    return db_grievance
+
+from pydantic import BaseModel
+
+class StatusUpdate(BaseModel):
+    status: models.GrievanceStatus
+
+@router.patch("/{grievance_id}/status", response_model=schemas.Grievance)
+def update_grievance_status(
+    grievance_id: int,
+    status_update: StatusUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    db_grievance = db.query(models.Grievance).filter(models.Grievance.id == grievance_id).first()
+    if not db_grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found")
     
-    db.add(db_grievance)
+    # Authorization
+    if current_user.role not in [models.UserRole.ADMIN, models.UserRole.FIELD_OFFICER]:
+        raise HTTPException(status_code=403, detail="Not authorized to update status")
+        
+    if current_user.role == models.UserRole.FIELD_OFFICER and db_grievance.assignee_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this grievance")
+
+    old_status = db_grievance.status
+    db_grievance.status = status_update.status
+    
+    # Timeline
+    if old_status != status_update.status:
+        db_timeline = models.Timeline(
+            grievance_id=db_grievance.id,
+            status=status_update.status,
+            remark=f"Status updated from {old_status} to {status_update.status} by {current_user.role}"
+        )
+        db.add(db_timeline)
+
     db.commit()
     db.refresh(db_grievance)
     return db_grievance
@@ -78,13 +158,14 @@ def create_feedback(grievance_id: int, feedback: schemas.FeedbackCreate, db: Ses
 def resolve_grievance(
     grievance_id: int, 
     image: UploadFile = File(None),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
 ):
     db_grievance = db.query(models.Grievance).filter(models.Grievance.id == grievance_id).first()
     if not db_grievance:
         raise HTTPException(status_code=404, detail="Grievance not found")
     
-    db_grievance.status = models.GrievanceStatus.RESOLVED
+    db_grievance.status = models.GrievanceStatus.PENDING_VERIFICATION
     
     if image:
         file_extension = image.filename.split(".")[-1]
@@ -92,7 +173,23 @@ def resolve_grievance(
         file_path = f"backend/uploads/{filename}"
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(image.file, buffer)
-        db_grievance.description += f"\n\n[Resolution Image]: /uploads/{filename}"
+            
+        # Add to Media
+        db_media = models.Media(
+            grievance_id=db_grievance.id,
+            url=f"/uploads/{filename}",
+            uploader_id=current_user.id,
+            type="resolution_image"
+        )
+        db.add(db_media)
+
+    # Timeline
+    db_timeline = models.Timeline(
+        grievance_id=db_grievance.id,
+        status=models.GrievanceStatus.PENDING_VERIFICATION,
+        remark="Grievance resolution submitted for verification"
+    )
+    db.add(db_timeline)
 
     db.commit()
     db.refresh(db_grievance)

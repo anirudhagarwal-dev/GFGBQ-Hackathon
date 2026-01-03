@@ -13,6 +13,9 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Home() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [regionCode, setRegionCode] = useState("");
+  const [consent, setConsent] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -102,7 +105,8 @@ export default function Home() {
       feature2: "Real-time Tracking",
       feature2Desc: "Monitor the status of your grievance every step of the way.",
       feature3: "Quick Resolution",
-      feature3Desc: "Our streamlined process ensures faster response times."
+      feature3Desc: "Our streamlined process ensures faster response times.",
+      consentText: "I consent to the processing of my data for grievance redressal.",
     },
     hi: {
       title: "CivicPulse (नागरिक पल्स)",
@@ -127,7 +131,8 @@ export default function Home() {
       feature2: "रियल-टाइम ट्रैकिंग",
       feature2Desc: "हर कदम पर अपनी शिकायत की स्थिति की निगरानी करें।",
       feature3: "त्वरित समाधान",
-      feature3Desc: "हमारी सुव्यवस्थित प्रक्रिया तेजी से प्रतिक्रिया समय सुनिश्चित करती है।"
+      feature3Desc: "हमारी सुव्यवस्थित प्रक्रिया तेजी से प्रतिक्रिया समय सुनिश्चित करती है।",
+      consentText: "मैं शिकायत निवारण के लिए अपने डेटा के प्रसंस्करण के लिए सहमति देता हूं।",
     }
   };
 
@@ -148,6 +153,9 @@ export default function Home() {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", description);
+      formData.append("location", location);
+      formData.append("region_code", regionCode);
+      formData.append("privacy_consent", String(consent));
       if (image) {
         formData.append("image", image);
       }
@@ -356,6 +364,44 @@ export default function Home() {
                                             required
                                             className="min-h-[100px] bg-white/50 focus:bg-white transition-colors"
                                         />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="location">Location</Label>
+                                            <Input 
+                                                id="location" 
+                                                placeholder="e.g. Main Street"
+                                                value={location}
+                                                onChange={(e) => setLocation(e.target.value)}
+                                                className="bg-white/50 focus:bg-white transition-colors"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="regionCode">Region Code</Label>
+                                            <Input 
+                                            id="regionCode" 
+                                            placeholder="e.g. REG-001"
+                                            value={regionCode}
+                                            onChange={(e) => setRegionCode(e.target.value)}
+                                            className="bg-white/50 focus:bg-white transition-colors"
+                                        />
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="consent"
+                                            checked={consent}
+                                            onChange={(e) => setConsent(e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            required
+                                        />
+                                        <label
+                                            htmlFor="consent"
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            {t[lang].consentText}
+                                        </label>
+                                    </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="image">Upload Evidence (Optional)</Label>

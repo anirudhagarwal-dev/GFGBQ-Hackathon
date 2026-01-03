@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import api from "@/lib/api";
-import { Loader2, Filter } from "lucide-react";
+import { Loader2, Filter, CheckCircle, UserPlus } from "lucide-react";
+
 
 interface Grievance {
   id: number;
@@ -15,6 +18,18 @@ interface Grievance {
   priority: string;
   category: string;
   created_at: string;
+  department_id?: number;
+  region_id?: number;
+  region_code?: string;
+  assignee_id?: number;
+}
+
+interface Officer {
+  id: number;
+  full_name: string;
+  email: string;
+  department_id: number;
+  region_code: string;
 }
 
 export default function AdminGrievances() {
@@ -41,10 +56,12 @@ export default function AdminGrievances() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Open": return "bg-blue-100 text-blue-800";
+      case "New": return "bg-blue-100 text-blue-800";
+      case "Assigned": return "bg-purple-100 text-purple-800";
       case "Resolved": return "bg-green-100 text-green-800";
-      case "Critical": return "bg-red-100 text-red-800";
+      case "Pending Verification": return "bg-orange-100 text-orange-800";
       case "In Progress": return "bg-yellow-100 text-yellow-800";
+      case "Critical": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -55,7 +72,17 @@ export default function AdminGrievances() {
       case "High": return "text-orange-600 font-semibold";
       default: return "text-gray-600";
     }
-  }
+  };
+
+  const handleVerify = async (id: number) => {
+      try {
+          await api.patch(`/admin/grievance/${id}/verify`);
+          fetchGrievances();
+      } catch (error) {
+          console.error("Verification failed", error);
+          alert("Failed to verify grievance");
+      }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -74,10 +101,11 @@ export default function AdminGrievances() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Open">Open</SelectItem>
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Assigned">Assigned</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
                 <SelectItem value="Resolved">Resolved</SelectItem>
-                <SelectItem value="Escalated">Escalated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -105,12 +133,24 @@ export default function AdminGrievances() {
                       </p>
                     </div>
                     
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
                       <div className={`text-sm ${getPriorityColor(g.priority)}`}>
                         {g.priority} Priority
                       </div>
                       <Badge className={getStatusColor(g.status)}>{g.status}</Badge>
-                      <Button variant="outline" asChild>
+                      
+                      {g.status === "Pending Verification" && (
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleVerify(g.id)}>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Verify
+                          </Button>
+                      )}
+
+                      {(g.status === "New" || g.status === "Assigned") && (
+                          <AssignDialog grievance={g} onAssign={fetchGrievances} />
+                      )}
+
+                      <Button variant="outline" asChild size="sm">
                         <a href={`/grievance/${g.id}`}>View Details</a>
                       </Button>
                     </div>
@@ -123,4 +163,93 @@ export default function AdminGrievances() {
       </div>
     </div>
   );
+}
+
+function AssignDialog({ grievance, onAssign }: { grievance: Grievance; onAssign: () => void }) {
+    const [officers, setOfficers] = useState<Officer[]>([]);
+    const [selectedOfficer, setSelectedOfficer] = useState<string>("");
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (open) {
+            fetchOfficers();
+        }
+    }, [open]);
+
+    const fetchOfficers = async () => {
+        setLoading(true);
+        try {
+            // Fetch officers matching department and region
+            let url = `/admin/officers?`;
+            if (grievance.department_id) url += `department_id=${grievance.department_id}&`;
+            if (grievance.region_id) url += `region_id=${grievance.region_id}`; // Assuming region_id is available
+            
+            const response = await api.get(url);
+            setOfficers(response.data);
+        } catch (error) {
+            console.error("Failed to fetch officers", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAssign = async () => {
+        if (!selectedOfficer) return;
+        try {
+            await api.patch(`/admin/grievance/${grievance.id}/assign`, {
+                officer_id: parseInt(selectedOfficer)
+            });
+            setOpen(false);
+            onAssign();
+        } catch (error) {
+            console.error("Assignment failed", error);
+            alert("Failed to assign officer. Check if department/region matches.");
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="secondary" size="sm">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    {grievance.status === "Assigned" ? "Reassign" : "Assign"}
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Assign Field Officer</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                    <Label>Select Officer</Label>
+                    <Select onValueChange={setSelectedOfficer}>
+                        <SelectTrigger className="mt-2">
+                            <SelectValue placeholder="Select an officer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {loading ? (
+                                <div className="p-2 text-center text-sm">Loading...</div>
+                            ) : officers.length === 0 ? (
+                                <div className="p-2 text-center text-sm">No matching officers found</div>
+                            ) : (
+                                officers.map((officer) => (
+                                    <SelectItem key={officer.id} value={officer.id.toString()}>
+                                        {officer.full_name} ({officer.region_code || "No Region"})
+                                    </SelectItem>
+                                ))
+                            )}
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-2">
+                        Only officers matching Department and Region are shown.
+                    </p>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleAssign} disabled={!selectedOfficer}>
+                        Assign
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 }

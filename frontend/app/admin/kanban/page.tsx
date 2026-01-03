@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import api from "@/lib/api";
 import { Loader2, ArrowLeft, LayoutDashboard, ListTodo, Map, Settings, LogOut, MoreHorizontal, Calendar, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 interface Grievance {
   id: number;
@@ -22,8 +23,10 @@ export default function KanbanBoard() {
   const router = useRouter();
   const [grievances, setGrievances] = useState<Grievance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) {
         router.push("/login");
@@ -32,7 +35,6 @@ export default function KanbanBoard() {
 
     const fetchGrievances = async () => {
       try {
-        // Fetch all grievances (using a high limit if pagination exists, or standard list endpoint)
         const response = await api.get("/grievance/?skip=0&limit=100");
         setGrievances(response.data);
       } catch (error) {
@@ -45,7 +47,46 @@ export default function KanbanBoard() {
     fetchGrievances();
   }, []);
 
-  if (loading) {
+  const onDragEnd = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    if (!destination) return;
+
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
+
+    // Find the grievance
+    const grievanceId = parseInt(draggableId);
+    const grievance = grievances.find(g => g.id === grievanceId);
+    if (!grievance) return;
+
+    // Determine new status based on destination column
+    let newStatus = grievance.status;
+    if (destination.droppableId === "todo") newStatus = "New"; // Default to New if moved to To Do
+    else if (destination.droppableId === "inprogress") newStatus = "In Progress";
+    else if (destination.droppableId === "verification") newStatus = "Pending Verification";
+    else if (destination.droppableId === "done") newStatus = "Resolved";
+
+    // Optimistic update
+    const previousGrievances = [...grievances];
+    setGrievances(prev => prev.map(g => 
+        g.id === grievanceId ? { ...g, status: newStatus } : g
+    ));
+
+    try {
+        await api.patch(`/grievance/${grievanceId}/status`, { status: newStatus });
+    } catch (error) {
+        console.error("Failed to update status", error);
+        // Revert on failure
+        setGrievances(previousGrievances);
+    }
+  };
+
+  if (loading || !mounted) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -54,9 +95,10 @@ export default function KanbanBoard() {
   }
 
   const columns = [
-    { id: "todo", title: "To Do", status: ["Open"], color: "bg-slate-100", border: "border-slate-200" },
-    { id: "inprogress", title: "In Progress", status: ["In Progress", "Escalated"], color: "bg-blue-50", border: "border-blue-200" },
-    { id: "done", title: "Done", status: ["Resolved", "Closed", "Rejected"], color: "bg-green-50", border: "border-green-200" },
+    { id: "todo", title: "To Do", status: ["New", "Assigned"], color: "bg-slate-100", border: "border-slate-200" },
+    { id: "inprogress", title: "In Progress", status: ["In Progress"], color: "bg-blue-50", border: "border-blue-200" },
+    { id: "verification", title: "Verification", status: ["Pending Verification"], color: "bg-orange-50", border: "border-orange-200" },
+    { id: "done", title: "Done", status: ["Resolved"], color: "bg-green-50", border: "border-green-200" },
   ];
 
   const getPriorityColor = (priority: string) => {
@@ -119,56 +161,71 @@ export default function KanbanBoard() {
                 </div>
             </div>
 
-            <div className="flex gap-6 h-full items-start overflow-x-auto pb-4">
-                {columns.map((column) => {
-                    const columnItems = grievances.filter(g => column.status.includes(g.status));
-                    
-                    return (
-                        <div key={column.id} className={`flex-shrink-0 w-80 md:w-96 flex flex-col rounded-xl border ${column.border} ${column.color} h-full max-h-[calc(100vh-12rem)]`}>
-                            <div className="p-4 border-b border-black/5 flex justify-between items-center bg-white/50 backdrop-blur rounded-t-xl">
-                                <h3 className="font-semibold text-slate-900">{column.title}</h3>
-                                <Badge variant="secondary" className="bg-white text-slate-600 shadow-sm">{columnItems.length}</Badge>
-                            </div>
-                            <div className="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
-                                {columnItems.map((item) => (
-                                    <motion.div 
-                                        key={item.id}
-                                        layoutId={`card-${item.id}`}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        whileHover={{ scale: 1.02 }}
-                                        className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 cursor-grab active:cursor-grabbing hover:shadow-md transition-all"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <Badge className={getPriorityColor(item.priority)} variant="outline">{item.priority}</Badge>
-                                            <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={16} /></button>
+            <DragDropContext onDragEnd={onDragEnd}>
+                <div className="flex gap-6 h-full items-start overflow-x-auto pb-4">
+                    {columns.map((column) => {
+                        const columnItems = grievances.filter(g => column.status.includes(g.status));
+                        
+                        return (
+                            <div key={column.id} className={`flex-shrink-0 w-80 md:w-96 flex flex-col rounded-xl border ${column.border} ${column.color} h-full max-h-[calc(100vh-12rem)]`}>
+                                <div className="p-4 border-b border-black/5 flex justify-between items-center bg-white/50 backdrop-blur rounded-t-xl">
+                                    <h3 className="font-semibold text-slate-900">{column.title}</h3>
+                                    <Badge variant="secondary" className="bg-white text-slate-600 shadow-sm">{columnItems.length}</Badge>
+                                </div>
+                                <Droppable droppableId={column.id}>
+                                    {(provided) => (
+                                        <div 
+                                            {...provided.droppableProps}
+                                            ref={provided.innerRef}
+                                            className="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-[100px]"
+                                        >
+                                            {columnItems.map((item, index) => (
+                                                <Draggable key={item.id} draggableId={item.id.toString()} index={index}>
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            style={{ ...provided.draggableProps.style }}
+                                                            className={`bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:shadow-md transition-all ${snapshot.isDragging ? 'shadow-lg ring-2 ring-blue-500/20 rotate-1' : ''}`}
+                                                        >
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <Badge className={getPriorityColor(item.priority)} variant="outline">{item.priority}</Badge>
+                                                                <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={16} /></button>
+                                                            </div>
+                                                            <h4 className="font-medium text-slate-900 mb-1 line-clamp-2">{item.title}</h4>
+                                                            <p className="text-xs text-slate-500 mb-3 line-clamp-2">{item.description}</p>
+                                                            
+                                                            <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                                                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                                    <Calendar size={12} />
+                                                                    <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                                                                </div>
+                                                                <div className="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-medium text-slate-600" title={`ID: ${item.id}`}>
+                                                                    #{item.id}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                            {columnItems.length === 0 && (
+                                                <div className="h-32 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">
+                                                    <p className="text-sm">No items</p>
+                                                </div>
+                                            )}
                                         </div>
-                                        <h4 className="font-medium text-slate-900 mb-1 line-clamp-2">{item.title}</h4>
-                                        <p className="text-xs text-slate-500 mb-3 line-clamp-2">{item.description}</p>
-                                        
-                                        <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                                <Calendar size={12} />
-                                                <span>{new Date(item.created_at).toLocaleDateString()}</span>
-                                            </div>
-                                            <div className="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-medium text-slate-600" title={`ID: ${item.id}`}>
-                                                #{item.id}
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                                {columnItems.length === 0 && (
-                                    <div className="h-32 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">
-                                        <p className="text-sm">No items</p>
-                                    </div>
-                                )}
+                                    )}
+                                </Droppable>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            </DragDropContext>
         </div>
       </div>
     </div>
   );
 }
+

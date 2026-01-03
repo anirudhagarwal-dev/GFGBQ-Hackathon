@@ -23,6 +23,11 @@ interface Grievance {
       rating: number;
       comment: string;
   };
+  timeline?: {
+      status: string;
+      remark: string;
+      created_at: string;
+  }[];
 }
 
 export default function GrievanceDetails() {
@@ -36,6 +41,8 @@ export default function GrievanceDetails() {
 
   useEffect(() => {
     fetchGrievance();
+    const interval = setInterval(fetchGrievance, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, [params.id]);
 
   const fetchGrievance = async () => {
@@ -219,6 +226,29 @@ export default function GrievanceDetails() {
                         </div>
                     </div>
                 </motion.div>
+
+                {grievance.timeline && grievance.timeline.length > 0 && (
+                <motion.div variants={item} className="space-y-3">
+                    <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <span className="p-1 bg-blue-500/20 rounded-md"><Clock className="h-5 w-5 text-blue-400" /></span>
+                        Timeline
+                    </h3>
+                    <div className="relative border-l-2 border-white/10 ml-3 space-y-6 pl-6 py-2">
+                        {grievance.timeline.map((event, index) => (
+                            <div key={index} className="relative">
+                                <div className="absolute -left-[31px] bg-slate-900 p-1 rounded-full border border-white/10">
+                                    <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm text-slate-400">{new Date(event.created_at).toLocaleString()}</p>
+                                    <p className="text-white font-medium">{event.status}</p>
+                                    {event.remark && <p className="text-sm text-slate-400">{event.remark}</p>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+                )}
                 
                 {/* Feedback Section */}
                 {grievance.status === "Resolved" && (
