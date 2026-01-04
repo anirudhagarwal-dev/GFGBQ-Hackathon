@@ -210,7 +210,7 @@ export default function MyGrievances() {
                             {g.image_url ? (
                                 <div className="w-full sm:w-32 h-32 sm:h-24 rounded-lg overflow-hidden shrink-0 mb-4 sm:mb-0 relative">
                                     <img 
-                                        src={`http://localhost:8000${g.image_url}`} 
+                                        src={`${process.env.NEXT_PUBLIC_API_URL}${g.image_url}`} 
                                         alt="Evidence" 
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />

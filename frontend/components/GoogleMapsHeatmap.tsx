@@ -30,6 +30,8 @@ const defaultCenter = {
 
 const defaultZoom = 11;
 
+const libraries: ("visualization" | "drawing" | "geometry" | "localContext" | "places")[] = ["visualization"];
+
 export function GoogleMapsHeatmap({
   heatmapData,
   apiKey,

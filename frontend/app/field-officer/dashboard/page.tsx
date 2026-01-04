@@ -178,9 +178,9 @@ export default function FieldOfficerDashboard() {
                     <div className="md:flex">
                         {g.image_url && (
                             <div className="md:w-64 h-48 md:h-auto relative shrink-0">
-                                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img 
-                                    src={`http://localhost:8000${g.image_url}`} 
+                                    src={`${process.env.NEXT_PUBLIC_API_URL}${g.image_url}`} 
                                     alt="Evidence" 
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
