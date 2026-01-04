@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ interface Grievance {
 
 export default function GrievanceDetails() {
   const params = useParams();
+  const router = useRouter();
   const [grievance, setGrievance] = useState<Grievance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,12 +90,40 @@ export default function GrievanceDetails() {
     </div>
   );
 
+  const handleBack = () => {
+    // Check if we have stored navigation context
+    if (typeof window !== 'undefined') {
+      const returnTo = sessionStorage.getItem('returnTo');
+      
+      if (returnTo === '/admin/grievances') {
+        // Restore navigation context for admin grievances page
+        const state = sessionStorage.getItem('adminGrievancesState');
+        const district = sessionStorage.getItem('adminGrievancesDistrict');
+        const view = sessionStorage.getItem('adminGrievancesView');
+        
+        if (state && district && view) {
+          // Keep the context stored so it can be restored when the page loads
+          router.push('/admin/grievances');
+          return;
+        }
+      }
+    }
+    
+    // Fallback to browser back
+    router.back();
+  };
+
   if (error || !grievance) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       <div className="text-center">
         <AlertTriangle className="h-12 w-12 mx-auto text-red-500 mb-4" />
         <h2 className="text-2xl font-bold">{error || "Grievance not found"}</h2>
-        <Link href="/" className="mt-4 inline-block text-blue-400 hover:text-blue-300 underline">Return Home</Link>
+        <button 
+          onClick={handleBack}
+          className="mt-4 inline-block text-blue-400 hover:text-blue-300 underline"
+        >
+          {userRole === "Admin" ? "Return to Dashboard" : userRole === "FieldOfficer" ? "Return to Dashboard" : "Return Home"}
+        </button>
       </div>
     </div>
   );
@@ -142,9 +171,12 @@ export default function GrievanceDetails() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-4"
         >
-            <Link href="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
+            <button 
+                onClick={handleBack}
+                className="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            >
                 <ArrowLeft className="h-6 w-6" />
-            </Link>
+            </button>
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                 Grievance Details
             </h1>

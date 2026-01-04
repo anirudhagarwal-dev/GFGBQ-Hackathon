@@ -22,6 +22,8 @@ export default function Home() {
   const [selectedState, setSelectedState] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [availableDistricts, setAvailableDistricts] = useState<string[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [consent, setConsent] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,17 @@ export default function Home() {
       setIsLoggedIn(!!token);
       setUserRole(role);
       setLang(getLanguageFromStorage());
+      
+      // Fetch departments for the grievance form
+      const fetchDepartments = async () => {
+        try {
+          const response = await api.get("/metadata/departments");
+          setDepartments(response.data);
+        } catch (err) {
+          console.error("Failed to fetch departments", err);
+        }
+      };
+      fetchDepartments();
   }, []);
 
   const handleLogout = () => {
@@ -125,6 +138,9 @@ export default function Home() {
       formData.append("region_code", selectedDistrict);
       formData.append("state", selectedState);
       formData.append("district", selectedDistrict);
+      if (selectedDepartment) {
+        formData.append("department_id", selectedDepartment);
+      }
       formData.append("privacy_consent", String(consent));
       if (image) {
         formData.append("image", image);
@@ -141,6 +157,10 @@ export default function Home() {
       setTitle("");
       setDescription("");
       setImage(null);
+      setSelectedDepartment("");
+      setSelectedState("");
+      setSelectedDistrict("");
+      setLocation("");
     } catch (err) {
       setError("Failed to submit grievance. Please try again.");
       console.error(err);
@@ -150,15 +170,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 font-sans selection:bg-blue-200/50">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0 flex items-center gap-2">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="flex-shrink-0 flex items-center gap-2.5">
+              <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
                   <span className="text-white font-bold text-xl">C</span>
               </div>
-              <span className="font-bold text-xl tracking-tight text-slate-900">CivicPulse</span>
+              <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">CivicPulse</span>
             </div>
             
             <div className="hidden md:flex items-center gap-4">
@@ -178,7 +198,7 @@ export default function Home() {
                     <Button variant="ghost" asChild>
                         <a href="/login">{t("login")}</a>
                     </Button>
-                    <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                    <Button asChild className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40 transition-all">
                         <a href="/signup">{t("signup")}</a>
                     </Button>
                   </>
@@ -245,8 +265,8 @@ export default function Home() {
                         transition={{ duration: 0.5 }}
                         className="text-4xl tracking-tight font-extrabold text-slate-900 sm:text-5xl md:text-6xl"
                     >
-                        <span className="block xl:inline">{t("title").split(" ")[0]}</span>{' '}
-                        <span className="block text-blue-600 xl:inline">for a Better City</span>
+                        <span className="block xl:inline bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">{t("title").split(" ")[0]}</span>{' '}
+                        <span className="block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent xl:inline">for a Better City</span>
                     </motion.h1>
                     <motion.p 
                         initial={{ opacity: 0, y: 20 }}
@@ -342,6 +362,21 @@ export default function Home() {
                                             onChange={(e) => setLocation(e.target.value)}
                                             className="bg-white/50 focus:bg-white transition-colors"
                                         />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="department">Department</Label>
+                                        <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
+                                            <SelectTrigger className="bg-white/50 focus:bg-white transition-colors">
+                                                <SelectValue placeholder="Select Department" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {departments.map((dept) => (
+                                                    <SelectItem key={dept.id} value={dept.id.toString()}>
+                                                        {dept.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,16 +45,43 @@ interface Officer {
 type ViewState = "states" | "districts" | "dashboard";
 
 export default function AdminGrievances() {
+  const router = useRouter();
   const [view, setView] = useState<ViewState>("states");
   const [selectedState, setSelectedState] = useState<string>("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   
   const [grievances, setGrievances] = useState<Grievance[]>([]);
   const [officers, setOfficers] = useState<Officer[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("All");
   const [stateCounts, setStateCounts] = useState<Record<string, number>>({});
   const [districtCounts, setDistrictCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    // Restore navigation context from sessionStorage on mount
+    if (typeof window !== 'undefined') {
+      const storedState = sessionStorage.getItem('adminGrievancesState');
+      const storedDistrict = sessionStorage.getItem('adminGrievancesDistrict');
+      const storedView = sessionStorage.getItem('adminGrievancesView') as ViewState;
+
+      if (storedState && storedDistrict && storedView) {
+        setSelectedState(storedState);
+        setSelectedDistrict(storedDistrict);
+        setView(storedView);
+        // Clear after restoring
+        sessionStorage.removeItem('adminGrievancesState');
+        sessionStorage.removeItem('adminGrievancesDistrict');
+        sessionStorage.removeItem('adminGrievancesView');
+      }
+    }
+  }, [router]);
 
   useEffect(() => {
     if (view === "dashboard" && selectedDistrict) {
@@ -110,9 +138,13 @@ export default function AdminGrievances() {
       const gResponse = await api.get(gUrl);
       setGrievances(gResponse.data);
 
-      // Fetch Officers
-      const oResponse = await api.get(`/admin/officers?state=${encodeURIComponent(selectedState)}&district=${encodeURIComponent(selectedDistrict)}`);
+      // Fetch Officers and Departments
+      const [oResponse, deptResponse] = await Promise.all([
+        api.get(`/admin/officers?state=${encodeURIComponent(selectedState)}&district=${encodeURIComponent(selectedDistrict)}`),
+        api.get("/metadata/departments")
+      ]);
       setOfficers(oResponse.data);
+      setDepartments(deptResponse.data);
     } catch (error) {
       console.error("Failed to fetch dashboard data", error);
     } finally {
@@ -123,11 +155,23 @@ export default function AdminGrievances() {
   const handleStateClick = (state: string) => {
     setSelectedState(state);
     setView("districts");
+    // Store navigation context
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('adminGrievancesState', state);
+      sessionStorage.removeItem('adminGrievancesDistrict');
+      sessionStorage.setItem('adminGrievancesView', 'districts');
+    }
   };
 
   const handleDistrictClick = (district: string) => {
     setSelectedDistrict(district);
     setView("dashboard");
+    // Store navigation context
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('adminGrievancesState', selectedState);
+      sessionStorage.setItem('adminGrievancesDistrict', district);
+      sessionStorage.setItem('adminGrievancesView', 'dashboard');
+    }
   };
 
   const handleBack = () => {
@@ -172,13 +216,13 @@ export default function AdminGrievances() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Grievance Management</h1>
-            <p className="text-gray-500">
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Grievance Management</h1>
+            <p className="text-slate-600 mt-1.5 font-medium">
               {view === "states" && "Select a State to view districts"}
               {view === "districts" && `Select a District in ${selectedState}`}
               {view === "dashboard" && `Dashboard for ${selectedDistrict}, ${selectedState}`}
@@ -186,12 +230,12 @@ export default function AdminGrievances() {
           </div>
           <div className="flex gap-4 items-center">
              {view !== "states" && (
-                 <Button variant="outline" onClick={handleBack} className="mr-4">
+                 <Button variant="outline" onClick={handleBack} className="mr-4 bg-white/80 backdrop-blur-sm border-slate-200/60 hover:bg-white">
                      <ArrowLeft className="w-4 h-4 mr-2" />
                      Back
                  </Button>
              )}
-             <a href="/admin/dashboard" className="text-sm text-blue-600 hover:underline">Back to Dashboard</a>
+             <a href="/admin/dashboard" className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors">Back to Dashboard</a>
           </div>
         </div>
 
@@ -203,18 +247,20 @@ export default function AdminGrievances() {
                     return (
                         <Card 
                             key={state} 
-                            className="hover:shadow-lg transition-all cursor-pointer hover:border-blue-500 group relative"
+                            className="bg-white/80 backdrop-blur-sm border-slate-200/60 hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer hover:border-blue-400 group relative shadow-md"
                             onClick={() => handleStateClick(state)}
                         >
-                            <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-2">
+                            <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-3">
                                 <div className="absolute top-3 right-3">
-                                    <div className="bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center shadow-sm">
-                                        <span className="text-white text-sm font-semibold">{count}</span>
+                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full w-9 h-9 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                        <span className="text-white text-sm font-bold">{count}</span>
                                     </div>
                                 </div>
-                                <MapPin className="w-8 h-8 text-blue-500 group-hover:scale-110 transition-transform" />
-                                <span className="font-semibold text-lg">{state}</span>
-                                <span className="text-xs text-gray-500">{indianStatesAndDistricts[state].length} Districts</span>
+                                <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                    <MapPin className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
+                                </div>
+                                <span className="font-bold text-lg text-slate-900">{state}</span>
+                                <span className="text-xs text-slate-500 font-medium">{indianStatesAndDistricts[state].length} Districts</span>
                             </CardContent>
                         </Card>
                     );
@@ -230,17 +276,19 @@ export default function AdminGrievances() {
                     return (
                         <Card 
                             key={district} 
-                            className="hover:shadow-lg transition-all cursor-pointer hover:border-blue-500 group relative"
+                            className="bg-white/80 backdrop-blur-sm border-slate-200/60 hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer hover:border-blue-400 group relative shadow-md"
                             onClick={() => handleDistrictClick(district)}
                         >
-                            <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-2">
+                            <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-3">
                                 <div className="absolute top-3 right-3">
-                                    <div className="bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center shadow-sm">
-                                        <span className="text-white text-sm font-semibold">{count}</span>
+                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full w-9 h-9 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                        <span className="text-white text-sm font-bold">{count}</span>
                                     </div>
                                 </div>
-                                <MapPin className="w-8 h-8 text-blue-500 group-hover:scale-110 transition-transform" />
-                                <span className="font-semibold text-lg">{district}</span>
+                                <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                    <MapPin className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
+                                </div>
+                                <span className="font-bold text-lg text-slate-900">{district}</span>
                             </CardContent>
                         </Card>
                     );
@@ -286,7 +334,7 @@ export default function AdminGrievances() {
                     ) : (
                         <div className="space-y-4">
                             {grievances.map((g) => (
-                                <Card key={g.id} className="hover:shadow-md transition-shadow">
+                                <Card key={g.id} className="bg-white/80 backdrop-blur-sm border-slate-200/60 shadow-md hover:shadow-lg hover:scale-[1.01] transition-all">
                                     <CardContent className="p-6">
                                         <div className="flex justify-between items-start mb-4">
                                             <div className="space-y-1">
@@ -368,8 +416,21 @@ export default function AdminGrievances() {
                                                     <AssignDialog grievance={g} onAssign={fetchDashboardData} />
                                                 )}
 
-                                                <Button variant="outline" asChild size="sm">
-                                                    <a href={`/grievance/${g.id}`}>View Details</a>
+                                                <Button 
+                                                  variant="outline" 
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    // Store navigation context before navigating
+                                                    if (typeof window !== 'undefined') {
+                                                      sessionStorage.setItem('adminGrievancesState', selectedState);
+                                                      sessionStorage.setItem('adminGrievancesDistrict', selectedDistrict);
+                                                      sessionStorage.setItem('adminGrievancesView', view);
+                                                      sessionStorage.setItem('returnTo', '/admin/grievances');
+                                                    }
+                                                    router.push(`/grievance/${g.id}`);
+                                                  }}
+                                                >
+                                                  View Details
                                                 </Button>
                                             </div>
                                         </div>
@@ -382,35 +443,78 @@ export default function AdminGrievances() {
 
                 {/* Right Column: Field Officers (1/3 width) */}
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                        <User className="w-5 h-5" />
+                    <h2 className="text-xl font-bold flex items-center gap-2.5 text-slate-900">
+                        <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <User className="w-5 h-5 text-blue-600" />
+                        </div>
                         Field Officers
                     </h2>
                     
                     {officers.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-8 text-center text-gray-500">
+                        <Card className="bg-white/80 backdrop-blur-sm border-slate-200/60">
+                            <CardContent className="p-8 text-center text-slate-500">
                                 No officers registered in {selectedDistrict}.
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="space-y-4">
-                            {officers.map((officer) => (
-                                <Card key={officer.id}>
-                                    <CardContent className="p-4 flex items-center gap-3">
-                                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                                            {officer.full_name.charAt(0)}
+                        <div className="space-y-6">
+                            {departments
+                                .filter(dept => officers.some(officer => officer.department_id === dept.id))
+                                .map((dept) => {
+                                    const deptOfficers = officers.filter(officer => officer.department_id === dept.id);
+                                    return (
+                                        <div key={dept.id} className="space-y-3">
+                                            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide border-b border-slate-200/60 pb-2">
+                                                {dept.name}
+                                            </h3>
+                                            <div className="space-y-2">
+                                                {deptOfficers.map((officer) => (
+                                                    <Card key={officer.id} className="bg-white/80 backdrop-blur-sm border-slate-200/60 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all">
+                                                        <CardContent className="p-4 flex items-center gap-3">
+                                                            <div className="h-10 w-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                                                                {officer.full_name.charAt(0)}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-medium">{officer.full_name}</p>
+                                                                <p className="text-xs text-gray-500">{officer.email}</p>
+                                                                <Badge variant="secondary" className="mt-1 text-xs">
+                                                                    {officer.district ? `${officer.district}, ${officer.state}` : officer.region_code}
+                                                                </Badge>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-medium">{officer.full_name}</p>
-                                            <p className="text-xs text-gray-500">{officer.email}</p>
-                                            <Badge variant="secondary" className="mt-1 text-xs">
-                                                {officer.district ? `${officer.district}, ${officer.state}` : officer.region_code}
-                                            </Badge>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                    );
+                                })}
+                            {officers.filter(officer => !officer.department_id).length > 0 && (
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide border-b border-slate-200/60 pb-2">
+                                        No Department
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {officers
+                                            .filter(officer => !officer.department_id)
+                                            .map((officer) => (
+                                                <Card key={officer.id} className="bg-white/80 backdrop-blur-sm border-slate-200/60 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all">
+                                                    <CardContent className="p-4 flex items-center gap-3">
+                                                        <div className="h-10 w-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                                                            {officer.full_name.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-medium">{officer.full_name}</p>
+                                                            <p className="text-xs text-gray-500">{officer.email}</p>
+                                                            <Badge variant="secondary" className="mt-1 text-xs">
+                                                                {officer.district ? `${officer.district}, ${officer.state}` : officer.region_code}
+                                                            </Badge>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -423,6 +527,7 @@ export default function AdminGrievances() {
 
 function AssignDialog({ grievance, onAssign }: { grievance: Grievance; onAssign: () => void }) {
     const [officers, setOfficers] = useState<Officer[]>([]);
+    const [departments, setDepartments] = useState<any[]>([]);
     const [selectedOfficer, setSelectedOfficer] = useState<string>("");
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -449,8 +554,12 @@ function AssignDialog({ grievance, onAssign }: { grievance: Grievance; onAssign:
                 url += `region_id=${grievance.region_id}`;
             }
             
-            const response = await api.get(url);
-            setOfficers(response.data);
+            const [officersResponse, departmentsResponse] = await Promise.all([
+                api.get(url),
+                api.get("/metadata/departments")
+            ]);
+            setOfficers(officersResponse.data);
+            setDepartments(departmentsResponse.data);
         } catch (error) {
             console.error("Failed to fetch officers", error);
         } finally {

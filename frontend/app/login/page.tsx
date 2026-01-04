@@ -68,17 +68,17 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        <Card className="bg-white/10 backdrop-blur-xl border-white/20 text-white shadow-2xl">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold tracking-tight">Welcome back</CardTitle>
-            <CardDescription className="text-slate-300">
+        <Card className="bg-white/95 backdrop-blur-xl border-white/40 text-slate-900 shadow-2xl shadow-blue-500/10">
+          <CardHeader className="space-y-1 text-center pb-4">
+            <CardTitle className="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Welcome back</CardTitle>
+            <CardDescription className="text-slate-600 font-medium">
               Sign in to your CivicPulse account
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-200">Email</Label>
+                <Label htmlFor="email" className="text-slate-700 font-medium">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input
@@ -88,14 +88,14 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pl-9 bg-black/20 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
+                    className="pl-9 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-slate-200">Password</Label>
-                  <Link href="#" className="text-xs text-blue-300 hover:text-blue-200">
+                  <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
+                  <Link href="#" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                     Forgot password?
                   </Link>
                 </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="pl-9 bg-black/20 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
+                    className="pl-9 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
@@ -125,7 +125,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-2 rounded-lg transition-all shadow-lg hover:shadow-blue-500/25"
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
                 disabled={loading}
               >
                 {loading ? (

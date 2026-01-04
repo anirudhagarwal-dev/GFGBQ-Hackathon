@@ -109,7 +109,7 @@ export default function SignupPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        <Card className="bg-white/10 backdrop-blur-xl border-white/20 text-white shadow-2xl">
+        <Card className="bg-white/95 backdrop-blur-xl border-white/40 text-slate-900 shadow-2xl shadow-blue-500/10">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-3xl font-bold tracking-tight">Create an account</CardTitle>
             <CardDescription className="text-slate-300">

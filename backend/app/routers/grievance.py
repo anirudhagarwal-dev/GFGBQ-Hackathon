@@ -20,6 +20,7 @@ def create_grievance(
     region_code: Optional[str] = Form(None),
     state: Optional[str] = Form(None),
     district: Optional[str] = Form(None),
+    department_id: Optional[int] = Form(None),
     privacy_consent: bool = Form(False),
     image: UploadFile = File(None),
     db: Session = Depends(database.get_db),
@@ -39,17 +40,25 @@ def create_grievance(
     else:
         priority = models.Priority.LOW
 
-    # Department Suggestion
-    dept_code = AIService.suggest_department(ai_result["category"])
-    department = db.query(models.Department).filter(models.Department.code == dept_code).first()
-    department_id = department.id if department else None
+    # Department Selection: Use user-selected department if provided, otherwise use AI suggestion
+    if department_id:
+        # Validate that the department exists
+        department = db.query(models.Department).filter(models.Department.id == department_id).first()
+        if not department:
+            raise HTTPException(status_code=400, detail="Invalid department selected")
+        final_department_id = department_id
+    else:
+        # Fallback to AI suggestion if no department selected
+        dept_code = AIService.suggest_department(ai_result["category"])
+        department = db.query(models.Department).filter(models.Department.code == dept_code).first()
+        final_department_id = department.id if department else None
 
     # Create Grievance
     db_grievance = models.Grievance(
         title=title,
         description=description,
         citizen_id=current_user.id,
-        department_id=department_id,
+        department_id=final_department_id,
         assignee_id=None,
         status=models.GrievanceStatus.NEW,
         priority=priority,
