@@ -235,7 +235,7 @@ export default function GrievanceDetails() {
                     </h3>
                     <div className="rounded-xl overflow-hidden border border-white/20 bg-black/40 relative group">
                         <img 
-                            src={`${process.env.NEXT_PUBLIC_API_URL}${grievance.image_url || (grievance.media && grievance.media[0]?.url) || ''}`} 
+                            src={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000'}${grievance.image_url || (grievance.media && grievance.media[0]?.url) || ''}`} 
                             alt="Grievance Evidence" 
                             className="w-full max-h-[600px] object-contain bg-black/20 transition-transform duration-500 group-hover:scale-[1.02]"
                             onError={(e) => {
@@ -303,7 +303,7 @@ export default function GrievanceDetails() {
                         </p>
                         <div className="rounded-xl overflow-hidden border border-white/20 bg-black/40 relative group">
                             <img 
-                                src={`http://127.0.0.1:8000${grievance.media.find(m => m.type === "resolution_image")?.url}`} 
+                                src={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000'}${grievance.media.find(m => m.type === "resolution_image")?.url}`} 
                                 alt="Resolution Proof" 
                                 className="w-full max-h-[600px] object-contain bg-black/20 transition-transform duration-500 group-hover:scale-[1.02]"
                                 onError={(e) => {

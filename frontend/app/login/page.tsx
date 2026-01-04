@@ -116,7 +116,7 @@ export default function LoginPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="bg-red-500/20 border border-red-500/50 rounded-md p-3 flex items-center gap-2 text-sm text-red-200"
+                  className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center gap-2 text-sm text-red-700"
                 >
                   <AlertCircle className="h-4 w-4" />
                   {error}
@@ -142,10 +142,10 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t border-white/10 pt-6">
-            <p className="text-sm text-slate-400">
+          <CardFooter className="flex justify-center border-t border-slate-200/60 pt-6">
+            <p className="text-sm text-slate-600">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-blue-300 hover:text-blue-200 font-semibold hover:underline">
+              <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
                 Sign up
               </Link>
             </p>

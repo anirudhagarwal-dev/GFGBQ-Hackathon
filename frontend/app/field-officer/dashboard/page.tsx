@@ -80,9 +80,7 @@ export default function FieldOfficerDashboard() {
     }
 
     try {
-      await api.put(`/grievance/${selectedGrievance.id}/resolve`, formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      await api.put(`/grievance/${selectedGrievance.id}/resolve`, formData);
       setDialogOpen(false);
       fetchAssignedGrievances(); // Refresh list
     } catch (error) {

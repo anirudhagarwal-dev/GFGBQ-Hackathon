@@ -112,14 +112,14 @@ export default function SignupPage() {
         <Card className="bg-white/95 backdrop-blur-xl border-white/40 text-slate-900 shadow-2xl shadow-blue-500/10">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-3xl font-bold tracking-tight">Create an account</CardTitle>
-            <CardDescription className="text-slate-300">
+            <CardDescription className="text-slate-600">
               Join CivicPulse to improve your community
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullname" className="text-slate-200">Full Name</Label>
+                <Label htmlFor="fullname" className="text-slate-700 font-medium">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input
@@ -129,13 +129,13 @@ export default function SignupPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
-                    className="pl-9 bg-black/20 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
+                    className="pl-9 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-200">Email</Label>
+                <Label htmlFor="email" className="text-slate-700 font-medium">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input
@@ -145,13 +145,13 @@ export default function SignupPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pl-9 bg-black/20 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
+                    className="pl-9 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-200">Password</Label>
+                <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input
@@ -161,17 +161,17 @@ export default function SignupPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="pl-9 bg-black/20 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:ring-blue-500/20"
+                    className="pl-9 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-slate-200">I am a</Label>
+                <Label htmlFor="role" className="text-slate-700 font-medium">I am a</Label>
                 <div className="relative">
                   <Shield className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
                   <Select onValueChange={setRole} defaultValue={role}>
-                    <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
+                    <SelectTrigger className="pl-9 bg-white border-slate-200 text-slate-900 focus:ring-blue-500/20">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -186,11 +186,11 @@ export default function SignupPage() {
               {role === "FieldOfficer" && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="department" className="text-slate-200">Department</Label>
+                    <Label htmlFor="department" className="text-slate-700 font-medium">Department</Label>
                     <div className="relative">
                       <Building className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
                       <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
-                        <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
+                        <SelectTrigger className="pl-9 bg-white border-slate-200 text-slate-900 focus:ring-blue-500/20">
                           <SelectValue placeholder="Select Department" />
                         </SelectTrigger>
                         <SelectContent>
@@ -205,11 +205,11 @@ export default function SignupPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="state" className="text-slate-200">State</Label>
+                    <Label htmlFor="state" className="text-slate-700 font-medium">State</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
                       <Select onValueChange={setSelectedState} value={selectedState}>
-                        <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
+                        <SelectTrigger className="pl-9 bg-white border-slate-200 text-slate-900 focus:ring-blue-500/20">
                           <SelectValue placeholder="Select State" />
                         </SelectTrigger>
                         <SelectContent>
@@ -224,11 +224,11 @@ export default function SignupPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="district" className="text-slate-200">District</Label>
+                    <Label htmlFor="district" className="text-slate-700 font-medium">District</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400 z-10" />
                       <Select onValueChange={setSelectedDistrict} value={selectedDistrict} disabled={!selectedState}>
-                        <SelectTrigger className="pl-9 bg-black/20 border-white/10 text-white focus:ring-blue-500/20">
+                        <SelectTrigger className="pl-9 bg-white border-slate-200 text-slate-900 focus:ring-blue-500/20 disabled:bg-slate-100 disabled:text-slate-400">
                           <SelectValue placeholder="Select District" />
                         </SelectTrigger>
                         <SelectContent>
@@ -248,7 +248,7 @@ export default function SignupPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="bg-red-500/20 border border-red-500/50 rounded-md p-3 flex items-center gap-2 text-sm text-red-200"
+                  className="bg-red-50 border border-red-200 rounded-md p-3 flex items-center gap-2 text-sm text-red-700"
                 >
                   <AlertCircle className="h-4 w-4" />
                   {error}
@@ -274,10 +274,10 @@ export default function SignupPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t border-white/10 pt-6">
-            <p className="text-sm text-slate-400">
+          <CardFooter className="flex justify-center border-t border-slate-200/60 pt-6">
+            <p className="text-sm text-slate-600">
               Already have an account?{" "}
-              <Link href="/login" className="text-blue-300 hover:text-blue-200 font-semibold hover:underline">
+              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
                 Sign in
               </Link>
             </p>

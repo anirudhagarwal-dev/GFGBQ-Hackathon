@@ -146,11 +146,7 @@ export default function Home() {
         formData.append("image", image);
       }
 
-      const response = await api.post("/grievance/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await api.post("/grievance/", formData);
       
       setSuccess("Grievance submitted successfully!");
       setResult(response.data);
@@ -251,7 +247,7 @@ export default function Home() {
         </AnimatePresence>
       </nav>
 
-      <div className="relative pt-32 pb-16 sm:pt-40 sm:pb-24 overflow-hidden">
+      <div className="relative min-h-[calc(100vh-4rem)] pt-16 overflow-hidden flex items-center">
         <div className="absolute inset-0 -z-10 transform-gpu overflow-hidden blur-3xl" aria-hidden="true">
             <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style={{clipPath: "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"}}></div>
         </div>
@@ -276,22 +272,6 @@ export default function Home() {
                     >
                         {t("subtitle")}
                     </motion.p>
-                    
-                    <motion.div 
-                         initial={{ opacity: 0, y: 20 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         transition={{ duration: 0.5, delay: 0.2 }}
-                         className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0"
-                    >
-                        <p className="text-sm font-semibold text-slate-900 tracking-wide uppercase mb-3">
-                            TRUSTED BY MUNICIPALITIES ACROSS THE REGION
-                        </p>
-                        <div className="flex gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                             <div className="h-8 w-24 bg-slate-300 rounded"></div>
-                             <div className="h-8 w-24 bg-slate-300 rounded"></div>
-                             <div className="h-8 w-24 bg-slate-300 rounded"></div>
-                        </div>
-                    </motion.div>
                 </div>
                 
                 <motion.div 
