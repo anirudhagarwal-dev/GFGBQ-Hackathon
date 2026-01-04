@@ -31,6 +31,8 @@ origins = [o.strip() for o in origins_env.split(",") if o.strip()] or [
     "http://127.0.0.1:3000",
 ]
 
+print(f"✅ Allowed CORS Origins: {origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
