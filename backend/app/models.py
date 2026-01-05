@@ -35,7 +35,7 @@ class Region(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     code = Column(String, unique=True, index=True)
-    type = Column(String)  # State, District, Ward
+    type = Column(String)
     parent_id = Column(Integer, ForeignKey("regions.id"), nullable=True)
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
@@ -55,10 +55,9 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     phone_number = Column(String, nullable=True)
     
-    # New fields for field officers
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
-    region_id = Column(Integer, ForeignKey("regions.id"), nullable=True) # Changed from region_code
-    region_code = Column(String, nullable=True) # Kept for backward compatibility
+    region_id = Column(Integer, ForeignKey("regions.id"), nullable=True)
+    region_code = Column(String, nullable=True)
     state = Column(String, nullable=True)
     district = Column(String, nullable=True)
 
@@ -92,7 +91,6 @@ class Grievance(Base):
     priority = Column(String, default=Priority.LOW)
     category = Column(String, nullable=True)
     
-    # AI Fields
     category_ai = Column(String, nullable=True)
     severity_ai = Column(Float, nullable=True)
     is_spam = Column(Boolean, default=False)
@@ -125,7 +123,7 @@ class Media(Base):
     grievance_id = Column(Integer, ForeignKey("grievances.id"))
     url = Column(String)
     uploader_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    type = Column(String) # image, video, document
+    type = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     grievance = relationship("Grievance", back_populates="media")
