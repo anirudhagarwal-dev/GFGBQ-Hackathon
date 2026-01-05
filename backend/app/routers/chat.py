@@ -14,7 +14,6 @@ router = APIRouter(
     tags=["chat"]
 )
 
-# Configure Gemini API
 GOOGLE_AI_API_KEY = os.getenv("GOOGLE_AI_API_KEY", "")
 if GOOGLE_AI_API_KEY:
     genai.configure(api_key=GOOGLE_AI_API_KEY)
@@ -33,10 +32,6 @@ async def chat(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    """
-    Chat endpoint for citizen portal chatbot using Gemini AI.
-    Provides assistance with grievance submission, tracking, and general queries.
-    """
     if not GOOGLE_AI_API_KEY:
         raise HTTPException(
             status_code=503,
@@ -46,7 +41,6 @@ async def chat(
     try:
         model = genai.GenerativeModel('gemini-pro')
         
-        # System context for the chatbot
         system_prompt = """You are a helpful assistant for a civic grievance redressal system called CivicPulse. 
 Your role is to help citizens:
 1. Understand how to submit grievances
@@ -59,7 +53,6 @@ Keep responses under 200 words. If you don't know something, admit it and sugges
         
         user_message = chat_message.message
         
-        # Create conversation context
         full_prompt = f"{system_prompt}\n\nUser: {user_message}\nAssistant:"
         
         response = model.generate_content(full_prompt)
@@ -75,4 +68,3 @@ Keep responses under 200 words. If you don't know something, admit it and sugges
             status_code=500,
             detail=f"Error generating response: {str(e)}"
         )
-
