@@ -80,7 +80,6 @@ export const translations: Record<Language, Record<string, string>> = {
     resolve: "Resolve",
     uploadProof: "Upload Proof",
 
-    // Common
     status: "Status",
     priority: "Priority",
     category: "Category",
