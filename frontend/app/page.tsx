@@ -53,7 +53,6 @@ export default function Home() {
       setUserRole(role);
       setLang(getLanguageFromStorage());
       
-      // Fetch departments for the grievance form
       const fetchDepartments = async () => {
         try {
           const response = await api.get("/metadata/departments");
