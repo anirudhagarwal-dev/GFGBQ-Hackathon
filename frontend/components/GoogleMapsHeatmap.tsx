@@ -38,11 +38,10 @@ export function GoogleMapsHeatmap({
   center = defaultCenter,
   zoom = defaultZoom,
 }: GoogleMapsHeatmapProps) {
-  // Format heatmap data - using plain objects instead of LatLng for better compatibility
   const heatmapDataFormatted = useMemo(() => {
     return heatmapData.map((point) => ({
       location: { lat: point.lat, lng: point.lng },
-      weight: point.weight * point.count, // Weight based on severity and count
+      weight: point.weight * point.count,
     }));
   }, [heatmapData]);
 
