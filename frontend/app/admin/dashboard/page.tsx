@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -90,14 +91,14 @@ export default function Dashboard() {
             <p className="text-xs text-slate-400 mt-2 ml-0.5">{t("adminConsole")}</p>
         </div>
         <nav className="flex-1 px-4 space-y-1.5 mt-6">
-            <a href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-white font-medium transition-all shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 hover:scale-[1.02]">
+            <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl text-white font-medium transition-all shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 hover:scale-[1.02]">
                 <LayoutDashboard size={20} />
                 {t("dashboard")}
-            </a>
-            <a href="/admin/grievances" className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-xl transition-all hover:scale-[1.02]">
+            </Link>
+            <Link href="/admin/grievances" className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-xl transition-all hover:scale-[1.02]">
                 <ListTodo size={20} />
                 {t("grievances")}
-            </a>
+            </Link>
             <a href="/admin/kanban" className="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-xl transition-all hover:scale-[1.02]">
                 <Map size={20} />
                 {t("kanbanBoard")}
