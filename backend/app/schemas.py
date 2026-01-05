@@ -133,7 +133,6 @@ class Grievance(GrievanceBase):
     priority: Priority
     category: Optional[str] = None
     
-    # AI Fields
     category_ai: Optional[str] = None
     severity_ai: Optional[float] = None
     is_spam: bool = False
