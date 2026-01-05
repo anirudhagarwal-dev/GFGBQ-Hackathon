@@ -26,10 +26,8 @@ def create_grievance(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    # AI Classification
     ai_result = AIService.classify_grievance(title, description)
     
-    # Priority mapping
     severity = ai_result["severity_score"]
     if severity >= 0.8:
         priority = models.Priority.CRITICAL
@@ -40,20 +38,25 @@ def create_grievance(
     else:
         priority = models.Priority.LOW
 
-    # Department Selection: Use user-selected department if provided, otherwise use AI suggestion
+    final_department_id = None
     if department_id:
-        # Validate that the department exists
         department = db.query(models.Department).filter(models.Department.id == department_id).first()
         if not department:
             raise HTTPException(status_code=400, detail="Invalid department selected")
         final_department_id = department_id
     else:
-        # Fallback to AI suggestion if no department selected
-        dept_code = AIService.suggest_department(ai_result["category"])
-        department = db.query(models.Department).filter(models.Department.code == dept_code).first()
-        final_department_id = department.id if department else None
+        try:
+            dept_code = AIService.suggest_department(ai_result["category"])
+            department = db.query(models.Department).filter(models.Department.code == dept_code).first()
+            final_department_id = department.id if department else None
+        except Exception as e:
+            print(f"Error resolving department: {e}")
+            
+    if not final_department_id:
+        general_dept = db.query(models.Department).filter(models.Department.code == "GEN").first()
+        if general_dept:
+            final_department_id = general_dept.id
 
-    # Create Grievance
     db_grievance = models.Grievance(
         title=title,
         description=description,
@@ -75,9 +78,8 @@ def create_grievance(
     )
     
     db.add(db_grievance)
-    db.flush() # To get ID
+    db.flush()
 
-    # Handle Image
     if image:
         file_extension = image.filename.split(".")[-1]
         filename = f"{uuid.uuid4()}.{file_extension}"
@@ -87,7 +89,7 @@ def create_grievance(
             shutil.copyfileobj(image.file, buffer)
         
         image_url = f"/uploads/{filename}"
-        db_grievance.image_url = image_url # Keep legacy field for now
+        db_grievance.image_url = image_url
         
         db_media = models.Media(
             grievance_id=db_grievance.id,
@@ -97,7 +99,6 @@ def create_grievance(
         )
         db.add(db_media)
 
-    # Create Initial Timeline
     db_timeline = models.Timeline(
         grievance_id=db_grievance.id,
         status=models.GrievanceStatus.NEW,
@@ -125,7 +126,6 @@ def update_grievance_status(
     if not db_grievance:
         raise HTTPException(status_code=404, detail="Grievance not found")
     
-    # Authorization
     if current_user.role not in [models.UserRole.ADMIN, models.UserRole.FIELD_OFFICER]:
         raise HTTPException(status_code=403, detail="Not authorized to update status")
         
@@ -135,7 +135,6 @@ def update_grievance_status(
     old_status = db_grievance.status
     db_grievance.status = status_update.status
     
-    # Timeline
     if old_status != status_update.status:
         db_timeline = models.Timeline(
             grievance_id=db_grievance.id,
@@ -187,7 +186,6 @@ def resolve_grievance(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(image.file, buffer)
             
-        # Add to Media
         db_media = models.Media(
             grievance_id=db_grievance.id,
             url=f"/uploads/{filename}",
@@ -196,7 +194,6 @@ def resolve_grievance(
         )
         db.add(db_media)
 
-    # Timeline
     db_timeline = models.Timeline(
         grievance_id=db_grievance.id,
         status=models.GrievanceStatus.PENDING_VERIFICATION,
