@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure Gemini API
 GOOGLE_AI_API_KEY = os.getenv("GOOGLE_AI_API_KEY", "")
 if GOOGLE_AI_API_KEY:
     genai.configure(api_key=GOOGLE_AI_API_KEY)
@@ -15,11 +14,7 @@ if GOOGLE_AI_API_KEY:
 class AIService:
     @staticmethod
     def classify_grievance(title: str, description: str) -> Dict[str, Any]:
-        """
-        Use Gemini AI to classify grievance, detect spam, and calculate severity.
-        """
         if not GOOGLE_AI_API_KEY:
-            # Fallback to mock logic if API key not configured
             return AIService._mock_classify(title, description)
         
         try:
@@ -39,17 +34,13 @@ Return only valid JSON in this format:
             
             response = model.generate_content(prompt)
             
-            # Parse JSON response
-            # Extract JSON from response
             text = response.text.strip()
             json_match = re.search(r'\{[^}]*\}', text, re.DOTALL)
             if json_match:
                 result = json.loads(json_match.group())
             else:
-                # Fallback if JSON parsing fails
                 return AIService._mock_classify(title, description)
             
-            # Validate and return
             return {
                 "category": result.get("category", "Other"),
                 "severity_score": float(result.get("severity_score", 0.3)),
@@ -59,12 +50,10 @@ Return only valid JSON in this format:
             
         except Exception as e:
             print(f"Gemini API error: {e}")
-            # Fallback to mock logic on error
             return AIService._mock_classify(title, description)
     
     @staticmethod
     def _mock_classify(title: str, description: str) -> Dict[str, Any]:
-        """Fallback mock classification logic"""
         text = (title + " " + description).lower()
         
         categories = ["Sanitation", "Roads", "Water Supply", "Electricity", "Law & Order", "Other"]
@@ -93,14 +82,12 @@ Return only valid JSON in this format:
 
     @staticmethod
     def suggest_department(category: str) -> str:
-        """
-        Maps category to department code.
-        """
         mapping = {
-            "Sanitation": "DEPT-SAN",
-            "Roads": "DEPT-PWD",
-            "Water Supply": "DEPT-WAT",
-            "Electricity": "DEPT-PWR",
-            "Law & Order": "DEPT-POL"
+            "Sanitation": "SANI",
+            "Roads": "ROAD",
+            "Water Supply": "WATER",
+            "Electricity": "ELEC",
+            "Law & Order": "GEN",
+            "Health": "HLTH"
         }
-        return mapping.get(category, "DEPT-GEN")
+        return mapping.get(category, "GEN")
