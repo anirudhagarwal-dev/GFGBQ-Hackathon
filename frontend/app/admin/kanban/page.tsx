@@ -60,7 +60,7 @@ export default function KanbanBoard() {
     }
 
     // Find the grievance
-    const grievanceId = parseInt(draggableId);
+    const grievanceId = parseInt(draggableId, 10);
     const grievance = grievances.find(g => g.id === grievanceId);
     if (!grievance) return;
 
