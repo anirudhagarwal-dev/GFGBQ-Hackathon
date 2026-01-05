@@ -65,11 +65,9 @@ export default function MyGrievances() {
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      // Restore original order when search is cleared
       setFilteredGrievances([...grievances]);
     } else {
       const query = searchQuery.toLowerCase();
-      // Prioritize items that start with the search query, then items that contain it
       const filtered = grievances
         .filter((g) => {
           return (
@@ -81,12 +79,10 @@ export default function MyGrievances() {
           );
         })
         .sort((a, b) => {
-          // Items starting with query come first
           const aStarts = a.title.toLowerCase().startsWith(query);
           const bStarts = b.title.toLowerCase().startsWith(query);
           if (aStarts && !bStarts) return -1;
           if (!aStarts && bStarts) return 1;
-          // Otherwise maintain original order (by id or created_at)
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
       setFilteredGrievances(filtered);

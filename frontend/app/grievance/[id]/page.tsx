@@ -52,7 +52,7 @@ export default function GrievanceDetails() {
     const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
     setUserRole(role);
     fetchGrievance();
-    const interval = setInterval(fetchGrievance, 5000); // Poll every 5 seconds
+    const interval = setInterval(fetchGrievance, 5000);
     return () => clearInterval(interval);
   }, [params.id]);
 
@@ -76,7 +76,7 @@ export default function GrievanceDetails() {
               comment,
               grievance_id: grievance.id
           });
-          fetchGrievance(); // Refresh to show feedback
+          fetchGrievance();
       } catch (error) {
           console.error("Failed to submit feedback", error);
       } finally {
@@ -91,25 +91,21 @@ export default function GrievanceDetails() {
   );
 
   const handleBack = () => {
-    // Check if we have stored navigation context
     if (typeof window !== 'undefined') {
       const returnTo = sessionStorage.getItem('returnTo');
       
       if (returnTo === '/admin/grievances') {
-        // Restore navigation context for admin grievances page
         const state = sessionStorage.getItem('adminGrievancesState');
         const district = sessionStorage.getItem('adminGrievancesDistrict');
         const view = sessionStorage.getItem('adminGrievancesView');
         
         if (state && district && view) {
-          // Keep the context stored so it can be restored when the page loads
           router.push('/admin/grievances');
           return;
         }
       }
     }
     
-    // Fallback to browser back
     router.back();
   };
 
