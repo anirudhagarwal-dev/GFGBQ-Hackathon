@@ -9,7 +9,6 @@ export function useLanguage() {
   useEffect(() => {
     setLang(getLanguageFromStorage());
     
-    // Listen for language changes
     const handleLanguageChange = (e: CustomEvent) => {
       setLang(e.detail);
     };
