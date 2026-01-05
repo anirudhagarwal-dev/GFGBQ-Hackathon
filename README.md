@@ -1,135 +1,86 @@
-Problem Statement
+## Submission Details
 
-Public governance bodies receive thousands of citizen grievances every day, covering issues such as civic infrastructure, sanitation, public safety, utilities, healthcare, education, and administrative delays. These complaints are often unstructured, manually reviewed, and slow to resolve, leading to backlogs, poor accountability, and citizen dissatisfaction.
-There is a pressing need for an intelligent, transparent, and automated grievance redressal system that can streamline complaint submission, assignment, tracking, and resolution.
+1. **Problem Statement**: AI-Powered Citizen Grievance Redressal System (Streamlining public grievance resolution)
+2. **Project Name**: Grievance Redressal System
+3. **Team Name**: Team Dev Hawks
+4. **2-minute Demonstration Video link**: `https://drive.google.com/drive/folders/14DBqXr42M8OL2E2nHNov43BmeMm4Dkz4?usp=drive_link`
+5. **PPT Link**: `https://drive.google.com/drive/folders/14DBqXr42M8OL2E2nHNov43BmeMm4Dkz4?usp=drive_link`
 
-Project Name
+# Team Dev Hawks — AI-Powered Citizen Grievance Redressal System
 
-AI-Powered Citizen Grievance Redressal System
+An intelligent, transparent, and automated grievance redressal system designed to streamline complaint submission, assignment, tracking, and resolution for public governance. The system features a role-based workflow (Citizen, Admin, Field Officer) powered by **FastAPI** (backend) and **Next.js** (frontend), with **Gemini AI** integration for automated grievance classification and prioritization.
 
-Team Name
+## What’s Inside
+- **Role-Based Portals**: Dedicated interfaces for Citizens (raise/track), Admins (assign/monitor), and Field Officers (resolve/update).
+- **AI-Powered Analysis**: Uses Google Gemini Pro to automatically classify grievances, detect spam, and calculate severity scores.
+- **Interactive Heatmaps**: Visualizes grievance density and hotspots using Google Maps integration.
+- **AI Chatbot**: Built-in assistant to guide citizens through the grievance reporting process.
+- **Multilingual Support**: Accessible to a wider audience with dynamic language selection.
+- **Automated Workflow**: Streamlined process from submission → validation → assignment → resolution → verification.
+- **Modern Tech Stack**: Built with Next.js 16 (App Router), Tailwind CSS, Shadcn UI, FastAPI, and Supabase (PostgreSQL).
 
-Team Dev Hawks
+## Quickstart
 
+### 1) Backend
+- **Prereqs**: Python 3.11+, PostgreSQL/Supabase database, Google Gemini API Key.
+- **Install**:
+  ```bash
+  cd backend
+  python -m venv .venv
+  # Windows
+  .venv\Scripts\activate
+  # Linux/Mac
+  # source .venv/bin/activate
+  pip install -r requirements.txt
+  ```
+- **Configuration**:
+  Ensure you have a `.env` file configured with your database credentials, API keys, and secret keys.
+- **Run API**:
+  ```bash
+  uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+  ```
+- **Health**: `GET /` (Welcome message)
 
-2-Minute Demonstration Video Link  https://drive.google.com/drive/folders/14DBqXr42M8OL2E2nHNov43BmeMm4Dkz4?usp=drive_link
+### 2) Frontend
+- **Prereqs**: Node 18+.
+- **Install**:
+  ```bash
+  cd frontend
+  npm install
+  ```
+- **Configuration**:
+  Ensure you have a `.env.local` file configured with the backend API URL.
+- **Run**:
+  ```bash
+  npm run dev
+  ```
+  Access at [http://localhost:3000].
 
-Add your demo video link here
+## Database Setup (Supabase)
+- The project uses Supabase (PostgreSQL) for persistence.
+- The application is designed to automatically create necessary tables on startup.
+- **Seed Data**: Run `python -m app.seed` (or `python backend/app/seed.py`) to populate initial departments (Water, Electricity, etc.), regions, and default users.
 
-PPT Link
+## Key Features & Capabilities
+- **Smart Classification**: AI analyzes grievance text to tag it (e.g., "Sanitation", "Roads") and assign urgency.
+- **Geotagging & Mapping**: Location-based tracking of grievances allows authorities to identify infrastructure failures visually.
+- **Dashboard Analytics**: Admin dashboard provides real-time insights into grievance trends, officer performance, and resolution rates.
+- **Secure Auth**: JWT-based authentication ensures secure access for all roles.
+- **Department & Region Management**: Organized structure for handling grievances across different zones and public utility sectors.
 
-Add your presentation (PPT) link here   https://drive.google.com/drive/folders/14DBqXr42M8OL2E2nHNov43BmeMm4Dkz4?usp=drive_link
+## Testing
+- **Backend**:
+  ```bash
+  cd backend
+  pytest
+  ```
+- **Frontend**:
+  ```bash
+  cd frontend
+  npm test
+  ```
 
-Project Overview
-
-The AI-Powered Citizen Grievance Redressal System is a role-based web platform designed to digitize and automate the complete grievance lifecycle.
-The system ensures faster resolution, proper accountability, and transparent governance by enabling structured workflows across three dedicated portals:
-
-Citizen Portal – Raise and track grievances
-
-Admin Portal – Manage, categorize, and assign grievances
-
-Field Officer Portal – Resolve assigned grievances and update status
-
-This system eliminates manual routing, reduces delays, and ensures that grievances are addressed by the correct authority based on location and issue type.
-
-System Workflow
-
-Citizen raises a grievance with issue details, category, and location.
-
-Admin reviews the grievance, validates it, and assigns it to the appropriate Field Officer based on region and department.
-
-Field Officer works on the issue, updates progress, and marks it as resolved.
-
-Admin verifies the resolution and closes the grievance.
-
-Citizen can track live status updates throughout the entire process.
-
-Portals Description
-1. Citizen Portal
-
-Register/Login securely
-
-Raise grievances with description, category, and location
-
-Upload supporting details (if any)
-
-Track grievance status in real time
-
-View resolution history and updates
-
-2. Admin Portal
-
-View all incoming grievances
-
-Categorize and prioritize grievances
-
-Assign grievances to field officers based on region/department
-
-Monitor grievance status using dashboards
-
-Verify resolution submitted by field officers
-
-Close or reopen grievances if required
-
-3. Field Officer Portal
-
-Login to view assigned grievances
-Access grievance details and location
-Update work progress
-Mark grievances as resolved
-Send grievance for admin verification
-
----
-
-Key Features
-
-Role-based access control (Citizen / Admin / Field Officer)
-Structured grievance lifecycle management
-Real-time status updates for citizens
-Transparent accountability and tracking
-Scalable architecture for large grievance volumes
-Foundation ready for AI-based categorization and prioritization
-Setup and Installation Instructions
-Clone the repository:
-
-git clone https://github.com/ByteQuest-2025/GFGBQ-Team-dev-hawks.git
-
-
-Navigate to the project directory:
-cd grievance-redressal-system
-Install required dependencies:
-npm install
-Configure environment variables (database, authentication, etc.).
-Start the development server:
-npm start
-Usage Instructions
-Open the application in a browser.
-Choose the appropriate portal:
-Citizen
-Admin
-Field Officer
-Login/Register and perform role-specific actions.
-Track grievance status through the dashboard.
-Screenshots
-Relevant screenshots demonstrating:
-Citizen grievance submission
-Admin dashboard and assignment flow
-Field officer resolution update
-
----
-
-Live grievance tracking
-
-📂 Screenshots folder:
-🔗 https://drive.google.com/drive/folders/14DBqXr42M8OL2E2nHNov43BmeMm4Dkz4?usp=drive_link
-
----
-
-Future Enhancements
-
-AI-based grievance classification using NLP
-Automatic priority scoring for critical issues
-Multilingual grievance support
-Mobile application integration
-Analytics dashboard for governance insights
+## Current Gaps / Future Roadmap
+- Integration of SMS/WhatsApp notifications for status updates.
+- Advanced analytics with predictive modeling for grievance hotspots.
+- Offline support for field officers in low-connectivity areas.
