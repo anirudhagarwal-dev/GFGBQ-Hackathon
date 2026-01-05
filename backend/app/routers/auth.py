@@ -18,7 +18,6 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
         
         hashed_password = auth.get_password_hash(user.password)
         
-        # Convert role to string if it's an enum
         role_value = user.role.value if hasattr(user.role, 'value') else str(user.role)
         
         new_user = models.User(
