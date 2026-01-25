@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import RouteBodyClass from "@/components/RouteBodyClass";
+import RouteTransitions from "@/components/RouteTransitions";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <RouteBodyClass />
-        {children}
+        <RouteTransitions>{children}</RouteTransitions>
       </body>
     </html>
   );
