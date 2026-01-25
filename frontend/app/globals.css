@@ -129,9 +129,23 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-attachment: scroll;
 }
 
 body.no-bg {
   background-image: none !important;
+}
+
+html, body {
+  height: 100%;
+}
+
+::selection {
+  color: var(--primary-foreground);
+  background: color-mix(in oklab, var(--primary) 20%, transparent);
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
