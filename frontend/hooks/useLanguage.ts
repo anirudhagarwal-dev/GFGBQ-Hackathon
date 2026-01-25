@@ -7,15 +7,14 @@ export function useLanguage() {
   const [lang, setLang] = useState<Language>(() => getLanguageFromStorage());
 
   useEffect(() => {
-    setLang(getLanguageFromStorage());
-    
-    const handleLanguageChange = (e: CustomEvent) => {
-      setLang(e.detail);
+    const handleLanguageChange = (e: Event) => {
+      const detail = (e as CustomEvent<Language>).detail;
+      if (detail) setLang(detail);
     };
     
-    window.addEventListener("languagechange" as any, handleLanguageChange);
+    window.addEventListener("languagechange", handleLanguageChange as EventListener);
     return () => {
-      window.removeEventListener("languagechange" as any, handleLanguageChange);
+      window.removeEventListener("languagechange", handleLanguageChange as EventListener);
     };
   }, []);
 
