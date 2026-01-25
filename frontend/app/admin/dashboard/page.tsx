@@ -67,8 +67,19 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-slate-50 p-8">
+        <div className="max-w-7xl mx-auto grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-md p-4 animate-pulse"
+            >
+              <div className="h-4 w-24 bg-slate-200 rounded mb-3" />
+              <div className="h-8 w-32 bg-slate-200 rounded" />
+              <div className="h-3 w-20 bg-slate-100 rounded mt-2" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
