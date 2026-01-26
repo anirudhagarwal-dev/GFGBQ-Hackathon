@@ -22,7 +22,7 @@ An intelligent, transparent, and automated grievance redressal system designed t
 ## Quickstart
 
 ### 1) Backend
-- **Prereqs**: Python 3.11+, PostgreSQL/Supabase database, Google Gemini API Key.
+- **Prereqs**: Python 3.11+, optional PostgreSQL/Supabase, optional Google Gemini API Key.
 - **Install**:
   ```bash
   cd backend
@@ -34,12 +34,30 @@ An intelligent, transparent, and automated grievance redressal system designed t
   pip install -r requirements.txt
   ```
 - **Configuration**:
-  Ensure you have a `.env` file configured with your database credentials, API keys, and secret keys.
+  Create a `.env` in `backend` if you want PostgreSQL/Supabase:
+  ```
+  SUPABASE_URL=your_supabase_project_url
+  SUPABASE_DB_PASSWORD=your_database_password
+  # Optional: allow frontend origin(s), comma-separated
+  ALLOW_ORIGINS=https://your-vercel-domain.vercel.app
+  ```
+  - If these are not set, the backend uses local SQLite automatically.
 - **Run API**:
   ```bash
-  uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+  cd backend
+  python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
   ```
 - **Health**: `GET /` (Welcome message)
+- **Seed Data**:
+  ```bash
+  cd backend
+  python -m app.seed
+  ```
+  Seeds departments, regions, and default users (admin@example.com, etc.).
+  
+  Windows helpers:
+  - Double-click `START_BACKEND.bat` (PostgreSQL/Supabase or SQLite based on `.env`)
+  - Or `START_SIMPLE.bat` to force SQLite
 
 ### 2) Frontend
 - **Prereqs**: Node 18+.
@@ -49,17 +67,23 @@ An intelligent, transparent, and automated grievance redressal system designed t
   npm install
   ```
 - **Configuration**:
-  Ensure you have a `.env.local` file configured with the backend API URL.
+  Create `frontend/.env.local`:
+  ```
+  NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+  ```
+  - In production (Vercel), set these as Environment Variables.
+  - The app also supports calling `/api/...` via Next.js rewrites when `NEXT_PUBLIC_API_URL` is present.
 - **Run**:
   ```bash
   npm run dev
   ```
   Access at [http://localhost:3000].
 
-## Database Setup (Supabase)
-- The project uses Supabase (PostgreSQL) for persistence.
-- The application is designed to automatically create necessary tables on startup.
-- **Seed Data**: Run `python -m app.seed` (or `python backend/app/seed.py`) to populate initial departments (Water, Electricity, etc.), regions, and default users.
+## Backend Database
+- Default: SQLite (no setup needed).
+- Optional: Supabase (PostgreSQL). Set `SUPABASE_URL` and `SUPABASE_DB_PASSWORD` in `backend/.env`.
+- Tables are auto-created on startup.
 
 ## Key Features & Capabilities
 - **Smart Classification**: AI analyzes grievance text to tag it (e.g., "Sanitation", "Roads") and assign urgency.
@@ -68,19 +92,32 @@ An intelligent, transparent, and automated grievance redressal system designed t
 - **Secure Auth**: JWT-based authentication ensures secure access for all roles.
 - **Department & Region Management**: Organized structure for handling grievances across different zones and public utility sectors.
 
-## Testing
-- **Backend**:
+## Development Checks
+- **Backend quick check**:
   ```bash
   cd backend
-  pytest
+  python test_backend.py
   ```
-- **Frontend**:
+- **Frontend lint/build**:
   ```bash
   cd frontend
-  npm test
+  npm run lint
+  npm run build
   ```
 
-## Current Gaps / Future Roadmap
-- Integration of SMS/WhatsApp notifications for status updates.
-- Advanced analytics with predictive modeling for grievance hotspots.
-- Offline support for field officers in low-connectivity areas.
+## Deploy to Vercel (Frontend)
+- Project Settings:
+  - Root Directory: `frontend`
+  - Build Command: `npm run build`
+  - Install Command: `npm install`
+- Environment Variables (Production):
+  - `NEXT_PUBLIC_API_URL=https://your-backend-host.tld`
+  - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key` (optional)
+- Backend:
+  - Deploy FastAPI separately (Render, Railway, Fly.io, Cloud Run).
+  - Set `ALLOW_ORIGINS=https://your-vercel-domain.vercel.app` in backend env.
+  - Ensure routes `/auth`, `/metadata`, `/grievance`, `/admin`, and static `/uploads` are accessible.
+- Troubleshooting:
+  - `NOT_FOUND` on Vercel: verify Root Directory = `frontend`, env set, and backend reachable.
+  - CORS errors: update backend `ALLOW_ORIGINS` to include your Vercel domain.
+  - Heatmap message: set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to enable geospatial view.
